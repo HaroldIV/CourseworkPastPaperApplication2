@@ -11,7 +11,7 @@ public partial class Question
 
     public string ReadData { get; set; } = null!;
 
-    public Guid AssignmentId { get; set; }
+    public Guid AssignmentId { get => Assignment.Id; set => Assignment.Id = value; }
 
     public virtual Assignment Assignment { get; set; } = null!;
 }

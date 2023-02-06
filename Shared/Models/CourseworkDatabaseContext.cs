@@ -31,6 +31,8 @@ public partial class PapersDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.HasDefaultSchema("public");
+
         modelBuilder.Entity<Assignment>(entity =>
         {
             entity.HasIndex(e => e.StudentPassword, "IX_Assignments_StudentPassword");
@@ -46,9 +48,9 @@ public partial class PapersDbContext : DbContext
 
             entity.Property(e => e.Id).ValueGeneratedNever();
 
-            entity.HasOne(d => d.TeacherPasswordNavigation).WithMany(p => p.Classes).HasForeignKey(d => d.TeacherPassword);
+            entity.HasOne(d => d.TeacherNavigation).WithMany(p => p.Classes).HasForeignKey(d => d.TeacherPassword);
 
-            entity.HasMany(d => d.StudentsPasswords).WithMany(p => p.CurrentClasses)
+            entity.HasMany(d => d.Students).WithMany(p => p.CurrentClasses)
                 .UsingEntity<Dictionary<string, object>>(
                     "StudentInClass",
                     r => r.HasOne<Student>().WithMany().HasForeignKey("StudentsPassword"),

@@ -11,7 +11,11 @@ public partial class Assignment
 
     public DateTime Due { get; set; }
 
-    public long? StudentPassword { get; set; }
+    public long? StudentPassword
+    {
+        get => StudentPasswordNavigation!.Password;
+        set => StudentPasswordNavigation!.Password = value ?? default;
+    }
 
     public virtual ICollection<PaperResult> PaperResults { get; } = new List<PaperResult>();
 

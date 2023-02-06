@@ -1,26 +1,33 @@
 //using CourseworkPastPaperApplication.Shared;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.ResponseCompression;
-using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using FluentValidation;
-using Microsoft.AspNetCore.Identity;
-using System.Configuration;
 using CourseworkPastPaperApplication2.Shared;
-using System.Text.Json.Serialization;
+using FluentValidation;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace CourseworkPastPaperApplication2
 {
     public class Program
     {
+#if DEBUG
+        private static readonly Bogus.Faker faker = new Bogus.Faker();
+#endif
+
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
-            builder.Services.AddControllersWithViews().AddJsonOptions(x => x.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve);
+            builder.Services.AddControllersWithViews();
             builder.Services.AddRazorPages();
-            builder.Services.AddDbContext<CourseworkPastPaperApplication2.Shared.PapersDbContext>(optionsAction: options => options.UseNpgsql(@"Host=localhost;Database=CourseworkDatabase;Username=postgres;Password=oneplustwoequalsthreeoneplustwoequalsthree;Include Error Detail=true").EnableSensitiveDataLogging().EnableDetailedErrors());
+            builder.Services.AddDbContext<PapersDbContext>(optionsAction: options =>
+            {
+                options.UseNpgsql(@"Host=localhost;Database=CourseworkDatabase;Username=postgres;Password=oneplustwoequalsthreeoneplustwoequalsthree;Include Error Detail=true");
+#if DEBUG
+                options.EnableSensitiveDataLogging()
+                       .EnableDetailedErrors();
+#endif
+            });
             //builder.Services.AddScoped<UserValidator>();
 
             var app = builder.Build();
@@ -48,44 +55,56 @@ namespace CourseworkPastPaperApplication2
             app.MapControllers();
             app.MapFallbackToFile("index.html");
 
-            app.MapGet("/Teachers", );
-            app.MapGet("/Teachers/{name}", (([FromServices] CourseworkPastPaperApplication2.Shared.PapersDbContext db, [FromRoute] string name) => from teacher in db.Teachers
-                                                                                                            where teacher.Name == name
-                                                                                                            select teacher));
+            app.MapGet("/Teachers", ([FromServices] PapersDbContext db) => db.Teachers)
+                .WithName("GetAllTeachers");
 
-            app.MapGet("/Students", );
+            app.MapGet("/Teachers/{name}", ([FromServices] PapersDbContext db, [FromRoute] string name) => from teacher in db.Teachers
+                                                                                                           where teacher.Name == name
+                                                                                                           select teacher);
+
+            app.MapGet("/Students", ([FromServices] PapersDbContext db) => db.Students)
+                .WithName("GetAllStudents");
+
             app.MapGet("/Students/{name}", ([FromServices] PapersDbContext db, [FromRoute] string name) => from student in db.Students
-                                                                                                            where student.Name == name
-                                                                                                            select student);
+                                                                                                           where student.Name == name
+                                                                                                           select student);
 
-            app.MapGet("/Teachers/{name}/Students", (([FromServices] PapersDbContext db, [FromRoute] string name) => from teacher in db.Teachers
-                                                                                                                     where teacher.Name == name
-                                                                                                                     select
-                                                                                                                     (from @class in teacher.Classes
-                                                                                                                      select @class.Students)));
+            app.MapGet("/Teachers/{name}/Students", ([FromServices] PapersDbContext db, [FromRoute] string name) => db.Teachers.Where(teacher => teacher.Name == name)
+                                                                                                                               .Select(teacher => teacher.Classes
+                                                                                                                               .Select(@class => @class.Students)));
 
-            app.MapGet("/Teachers/{name}/Students", (([FromServices] PapersDbContext db, [FromRoute] string name) => from student in db.Students
-                                                                                                                     join @class in db.Classes on student.ClassId equals @class.Id
-                                                                                                                     join teacher in db.Teachers on @class.Id
-                                                                                                                     ));
+            app.MapGet("/Classes", ([FromServices] PapersDbContext db) =>
+            {
+                Microsoft.EntityFrameworkCore.Query.IIncludableQueryable<Class, ICollection<Student>> includableQueryable = db.Classes.Include(@class => @class.TeacherNavigation).Include(@class => @class.Students);
+
+                IEnumerable<Class> classes = JsonSerializer.Deserialize<IEnumerable<Class>>(JsonSerializer.Serialize(includableQueryable))!;
+
+                Console.WriteLine(JsonSerializer.Serialize(includableQueryable));
+                Console.WriteLine("DATA: " + JsonSerializer.Serialize(classes.Select(@class => @class.Students)));
+
+                return includableQueryable;
+            })
+            .WithName("GetAllClasses");
+
+#if DEBUG
             // This HTTP-GET method will fill the database with 1 class of 4 students and 1 teacher, generated by Faker then returns all teachers.
             app.MapGet("/FakeData", ([FromServices] PapersDbContext db) =>
             {
                 Console.WriteLine("Faking data...");
 
-                Teacher teacher = new Teacher { Name = Faker.Name.FullName(), Password = Faker.RandomNumber.Next() };
-                Class @class = new Class { Id = Guid.NewGuid(), TeacherPasswordNavigation = teacher };
-                
+                Teacher teacher = new Teacher { Name = faker.Name.FullName(), Password = faker.Random.Number(0, int.MaxValue) };
+                Class @class = new Class { Id = Guid.NewGuid(), TeacherNavigation = teacher };
+
                 teacher.Classes.Add(@class);
 
                 List<Student> students = new List<Student>
                 {
-                    new Student { Name = Faker.Name.FullName(), Password = Faker.RandomNumber.Next() },
-                    new Student { Name = Faker.Name.FullName(), Password = Faker.RandomNumber.Next() },
-                    new Student { Name = Faker.Name.FullName(), Password = Faker.RandomNumber.Next() } 
+                    new Student { Name = faker.Name.FullName(), Password = faker.Random.Number(0, int.MaxValue) },
+                    new Student { Name = faker.Name.FullName(), Password = faker.Random.Number(0, int.MaxValue) },
+                    new Student { Name = faker.Name.FullName(), Password = faker.Random.Number(0, int.MaxValue) }
                 };
 
-                students.ForEach(st => @class.StudentsPasswords.Add(st));
+                students.ForEach(st => @class.Students.Add(st));
 
                 db.Teachers.Add(teacher);
                 db.Classes.Add(@class);
@@ -94,199 +113,25 @@ namespace CourseworkPastPaperApplication2
                 db.SaveChanges();
             });
 
+            app.MapGet("/Clear", ([FromServices] PapersDbContext db) =>
+            {
+                IEnumerable<string> tables = from type in db.Model.GetEntityTypes()
+                                             select type.GetTableName();
+
+                foreach (string table in tables.Distinct())
+                {
+                    db.Database.ExecuteSqlRaw($"""TRUNCATE TABLE {db.Model.GetDefaultSchema()}."{table}" CASCADE;""");
+                }
+
+                db.SaveChanges();
+            });
+#endif
+
             app.Run();
-            //    }
-
-            //    private static IEnumerable<Teacher> GetTeachers([FromServices] PapersDbContext db) => db.Teachers;
-            //    private static IEnumerable<Student> GetStudents([FromServices] PapersDbContext db) => db.Students;
-            //    private static IEnumerable<Class> GetClasses([FromServices] PapersDbContext db) => db.Classes;
-            //}
-
-            //public class Assignment
-            //{
-            //    public Guid Id { get; set; }
-            //    public DateTime Set { get; set; }
-            //    public DateTime Due { get; set; }
-
-            //    public ICollection<Question> Questions { get; set; }
-            //}
-
-            //public class Teacher
-            //{
-            //    public string Name { get; set; }
-            //    public long Password { get; set; }
-
-            //    [JsonIgnore]
-            //    public ICollection<Class> Classes { get; set; }
-            //}
-
-            //public class StudentInClass
-            //{
-            //    public Student Student { get; set; }
-            //    public long StudentPassword { get => Student.Password; set => Student.Password = value; }
-
-            //    public Guid ClassId { get => Class.Id; set => Class.Id = value; }
-            //    public Class Class { get; set; }
-            //}
-
-            //public class Student
-            //{
-            //    public long Password { get; set; }
-            //    public string Name { get; set; }
-
-            //    [JsonIgnore]
-            //    public ICollection<StudentInClass> CurrentClasses { get; set; }
-
-            //    public ICollection<Assignment> Assignments { get; set; }
-            //    public ICollection<PaperResult> PaperResults { get; set; }
-            //}
-
-            //public class Class
-            //{
-            //    public Guid Id { get; set; }
-            //    public ICollection<StudentInClass> Students { get; set; }
-            //    public Teacher Teacher { get; set; }
-            //}
-
-            //public class Question
-            //{
-            //    public Guid Id { get; set; }
-            //    public byte[] Data { get; set; }
-            //    public string ReadData { get; set; }
-            //    public Guid AssignmentId { get; set; }
-            //}
-
-            //public class PaperResult
-            //{
-            //    public Guid Id { get; set; }
-            //    public int Score { get; set; }
-            //    public Assignment Assignment { get; set; }
-            //    public Guid AssignmentId { get; set; }
-            //}
-
-            //public class PapersDbContext : Microsoft.EntityFrameworkCore.DbContext
-            //{
-            //    public Microsoft.EntityFrameworkCore.DbSet<Student> Students { get; set; }
-            //    public Microsoft.EntityFrameworkCore.DbSet<Teacher> Teachers { get; set; }
-            //    public Microsoft.EntityFrameworkCore.DbSet<Assignment> Assignments { get; set; }
-            //    public Microsoft.EntityFrameworkCore.DbSet<Question> Questions { get; set; }
-            //    public Microsoft.EntityFrameworkCore.DbSet<Class> Classes { get; set; }
-            //    public Microsoft.EntityFrameworkCore.DbSet<PaperResult> PaperResults { get; set; }
-
-            //    public PapersDbContext(DbContextOptions options) : base(options)
-            //    {
-
-            //    }
-
-            //    public PapersDbContext() : base(new DbContextOptionsBuilder().UseNpgsql(@"Host=localhost;Database=CourseworkDatabase;Username=postgres;Password=oneplustwoequalsthreeoneplustwoequalsthree;Include Error Detail=true").Options)
-            //    {
-
-            //    }
-
-            //    protected override void OnModelCreating(ModelBuilder modelBuilder)
-            //    {
-            //        modelBuilder.HasDefaultSchema("public");
-
-            //        #region Student
-            //        modelBuilder.Entity<Student>()
-            //            .HasKey(student => student.Password);
-
-            //        modelBuilder.Entity<Student>()
-            //            .Property(student => student.Name)
-            //            .IsRequired();
-
-            //        modelBuilder.Entity<Student>()
-            //            .HasMany(student => student.PaperResults);
-
-            //        modelBuilder.Entity<Student>()
-            //            .ToTable("Students");
-            //        #endregion
-
-            //        #region StudentInClass
-            //        modelBuilder.Entity<StudentInClass>()
-            //            .HasKey(sic => new { sic.StudentPassword, sic.ClassId });
-
-            //        modelBuilder.Entity<StudentInClass>()
-            //            .HasOne(sic => sic.Student)
-            //            .WithMany(student => student.CurrentClasses)
-            //            .HasForeignKey(sic => sic.StudentPassword);
-
-            //        modelBuilder.Entity<StudentInClass>()
-            //            .HasOne(sic => sic.Class)
-            //            .WithMany(@class => @class.Students)
-            //            .HasForeignKey(sic => sic.ClassId);
-
-            //        modelBuilder.Entity<StudentInClass>()
-            //            .ToTable("StudentInClass");
-            //        #endregion
-
-            //        #region Teacher
-            //        modelBuilder.Entity<Teacher>()
-            //            .HasKey(teacher => teacher.Password);
-
-            //        modelBuilder.Entity<Teacher>()
-            //            .Property(teacher => teacher.Name)
-            //            .IsRequired();
-
-            //        modelBuilder.Entity<Teacher>()
-            //            .HasMany(teacher => teacher.Classes)
-            //            .WithOne(@class => @class.Teacher);
-
-            //        modelBuilder.Entity<Teacher>()
-            //            .ToTable("Teachers");
-            //        #endregion
-
-            //        #region Assignment
-            //        modelBuilder.Entity<Assignment>()
-            //            .HasKey(assignment => assignment.Id);
-
-            //        modelBuilder.Entity<Assignment>()
-            //            .Property(assignment => assignment.Set)
-            //            .IsRequired();
-
-            //        modelBuilder.Entity<Assignment>()
-            //            .Property(assignment => assignment.Due)
-            //            .IsRequired();
-
-            //        modelBuilder.Entity<Assignment>()
-            //            .HasMany(assignment => assignment.Questions);
-            //        #endregion
-
-            //        #region Class
-            //        modelBuilder.Entity<Class>()
-            //            .HasKey(@class => @class.Id);
-
-            //        modelBuilder.Entity<Class>()
-            //            .HasMany(@class => @class.Students);
-            //        #endregion
-
-            //        #region PaperResult
-            //        modelBuilder.Entity<PaperResult>()
-            //            .HasKey(paperResult => paperResult.Id);
-
-            //        modelBuilder.Entity<PaperResult>()
-            //            .Property(paperResult => paperResult.Score)
-            //            .IsRequired();
-
-            //        modelBuilder.Entity<PaperResult>()
-            //            .HasOne(paperResult => paperResult.Assignment);
-            //        #endregion
-
-            //        #region Question
-            //        modelBuilder.Entity<Question>()
-            //            .HasKey(question => question.Id);
-
-            //        modelBuilder.Entity<Question>()
-            //            .Property(question => question.Data)
-            //            .IsRequired();
-
-            //        modelBuilder.Entity<Question>()
-            //            .Property(question => question.ReadData)
-            //            .IsRequired();
-            //        #endregion
-
-            //        base.OnModelCreating(modelBuilder);
-            //    }
         }
+
+        private static IEnumerable<Teacher> GetTeachers([FromServices] PapersDbContext db) => db.Teachers;
+        private static IEnumerable<Student> GetStudents([FromServices] PapersDbContext db) => db.Students;
+        private static IEnumerable<Class> GetClasses([FromServices] PapersDbContext db) => db.Classes;
     }
 }

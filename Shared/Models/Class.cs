@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace CourseworkPastPaperApplication2.Shared;
 
@@ -9,7 +10,7 @@ public partial class Class
 
     public long TeacherPassword { get; set; }
 
-    public virtual Teacher TeacherPasswordNavigation { get; set; } = null!;
+    public virtual Teacher TeacherNavigation { get; set; } = null!;
 
-    public virtual ICollection<Student> StudentsPasswords { get; } = new List<Student>();
+    public virtual ICollection<Student> Students { get; init; } = new List<Student>();
 }

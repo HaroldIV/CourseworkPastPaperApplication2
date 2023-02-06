@@ -9,9 +9,9 @@ public partial class PaperResult
 
     public int Score { get; set; }
 
-    public Guid AssignmentId { get; set; }
+    public Guid AssignmentId { get => Assignment.Id; set => Assignment.Id = value; }
 
-    public long? StudentPassword { get; set; }
+    public long? StudentPassword { get => StudentPasswordNavigation!.Password; set => StudentPasswordNavigation!.Password = value ?? default; }
 
     public virtual Assignment Assignment { get; set; } = null!;
 
