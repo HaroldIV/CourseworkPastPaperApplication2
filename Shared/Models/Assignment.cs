@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace CourseworkPastPaperApplication2.Shared;
 
-public partial class Assignment
+public class Assignment
 {
     public Guid Id { get; set; }
 
@@ -11,15 +11,15 @@ public partial class Assignment
 
     public DateTime Due { get; set; }
 
-    public long? StudentPassword
+    public Guid? StudentId
     {
-        get => StudentPasswordNavigation!.Password;
-        set => StudentPasswordNavigation!.Password = value ?? default;
+        get => Student!.Id;
+        set => Student!.Id = value ?? default;
     }
 
     public virtual ICollection<PaperResult> PaperResults { get; } = new List<PaperResult>();
 
     public virtual ICollection<Question> Questions { get; } = new List<Question>();
 
-    public virtual Student? StudentPasswordNavigation { get; set; }
+    public virtual Student? Student { get; set; }
 }

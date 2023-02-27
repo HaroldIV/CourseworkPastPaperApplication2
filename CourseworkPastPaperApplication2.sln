@@ -3,11 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.4.33122.133
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CourseworkPastPaperApplication2.Server", "Server\CourseworkPastPaperApplication2.Server.csproj", "{9B8A24ED-523C-4E51-AA3E-A759C44E0CAB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CourseworkPastPaperApplication2.Server", "Server\CourseworkPastPaperApplication2.Server.csproj", "{9B8A24ED-523C-4E51-AA3E-A759C44E0CAB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CourseworkPastPaperApplication2.Client", "Client\CourseworkPastPaperApplication2.Client.csproj", "{9DEE9CC6-AB08-467D-A471-52EF3C267A6A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CourseworkPastPaperApplication2.Client", "Client\CourseworkPastPaperApplication2.Client.csproj", "{9DEE9CC6-AB08-467D-A471-52EF3C267A6A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CourseworkPastPaperApplication2.Shared", "Shared\CourseworkPastPaperApplication2.Shared.csproj", "{1B2F0E2B-2017-4E8B-A214-2F00A654B02E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CourseworkPastPaperApplication2.Shared", "Shared\CourseworkPastPaperApplication2.Shared.csproj", "{1B2F0E2B-2017-4E8B-A214-2F00A654B02E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

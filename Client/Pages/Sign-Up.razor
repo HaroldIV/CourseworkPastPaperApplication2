@@ -1,0 +1,106 @@
+﻿@page "/sign-up"
+@using System.Text.Json
+@inject NavigationManager NavManager
+@inject HttpClient Http
+
+<PageTitle>Sign Up</PageTitle>
+
+<h1 style="font-family:'Cascadia Code'">Sign Up</h1>
+
+<EditForm Model="teacher" OnSubmit="HandleSubmit">
+    <InputText id="name" placeholder="Full Name" @bind-Value="username" />
+    <InputText id="password" placeholder="Password" type="password" @bind-Value="password" />
+    <button type="submit">Submit</button>
+</EditForm>
+
+Welcome.
+
+@if (success is null)
+{
+    <p>Not yet.</p>
+}
+else if (success.Value)
+{
+    <p>Added!</p>
+}
+else
+{
+    <ul>
+        @foreach (string error in errors)
+        {
+            <li>@error</li>
+        }
+    </ul>
+}
+
+@code
+{
+    private string username { get => teacher.Name; set => teacher.Name = value; }
+    private string password { get => teacher.Password; set => teacher.Password = value; }
+
+    private bool? success = null;
+    private UserWithUnencryptedPassword teacher = new UserWithUnencryptedPassword();
+    private List<string> errors = new List<string>();
+
+    private async Task HandleSubmit()
+    {
+#if DEBUG
+    Console.WriteLine($"Attempting to sign-up user with name {teacher.Name}, password {teacher.Password}.");
+#endif
+
+        errors.Clear();
+
+        if (teacher.Name is null)
+        {
+            errors.Add("UNEXPECTED ERROR");
+        }
+        if (teacher.Password is null)
+        {
+            errors.Add("UNEXPECTED ERROR");
+        }
+
+
+        var result = await Http.PostAsJsonAsync<UserWithUnencryptedPassword>("https://localhost:7053/SignUpTeacher", teacher);
+
+        if (result.IsSuccessStatusCode)
+        {
+            success = true;
+
+            Console.WriteLine("Navigating to Login");
+            NavManager.NavigateTo("/");
+
+            return;
+        }
+
+        success = false;
+
+        switch (result.StatusCode)
+        {
+            case HttpStatusCode.NotFound:
+                errors.Add($"User {teacher.Name} with given password not found.");
+                break;
+            case HttpStatusCode.BadRequest:
+                errors.Add($"User {teacher.Name} could not be validated.");
+                JsonDocument doc = await JsonDocument.ParseAsync(result.Content.ReadAsStream());
+                var errorLists = doc.RootElement.GetProperty("errors").Deserialize<Dictionary<string, string[]>>() ?? Enumerable.Empty<KeyValuePair<string, string[]>>();
+
+                foreach (var errorList in errorLists)
+                {
+                    foreach (var error in errorList.Value)
+                    {
+                        errors.Add($"{errorList.Key}\t:\t{error}");
+                    }
+                }
+                break;
+            default:
+                errors.Add("UNEXPECTED ERROR");
+                break;
+        }
+    }
+
+    private void ToSignUp()
+    {
+        Console.WriteLine("Navigating to Sign-Up");
+        NavManager.NavigateTo("/sign-up");
+    }
+}

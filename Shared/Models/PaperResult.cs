@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace CourseworkPastPaperApplication2.Shared;
 
-public partial class PaperResult
+public class PaperResult
 {
     public Guid Id { get; set; }
 
@@ -11,9 +11,9 @@ public partial class PaperResult
 
     public Guid AssignmentId { get => Assignment.Id; set => Assignment.Id = value; }
 
-    public long? StudentPassword { get => StudentPasswordNavigation!.Password; set => StudentPasswordNavigation!.Password = value ?? default; }
+    public Guid? StudentId { get => Student!.Id; set => Student!.Id = value ?? default; }
 
     public virtual Assignment Assignment { get; set; } = null!;
 
-    public virtual Student? StudentPasswordNavigation { get; set; }
+    public virtual Student? Student { get; set; }
 }

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace CourseworkPastPaperApplication2.Shared;
 
-public partial class Question
+public class Question
 {
     public Guid Id { get; set; }
 

@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
 using Microsoft.EntityFrameworkCore;
 
 namespace CourseworkPastPaperApplication2.Shared;
 
-public partial class PapersDbContext : DbContext
+public class PapersDbContext : DbContext
 {
     public PapersDbContext()
     {
@@ -13,6 +14,12 @@ public partial class PapersDbContext : DbContext
     public PapersDbContext(DbContextOptions<PapersDbContext> options)
         : base(options)
     {
+    }
+
+    [DbFunction("utf8_to_string")]
+    public static string SQLUtf8ToString(byte[] bytes)
+    {
+        return Encoding.UTF8.GetString(bytes);
     }
 
     public virtual DbSet<Assignment> Assignments { get; set; }
@@ -27,76 +34,79 @@ public partial class PapersDbContext : DbContext
 
     public virtual DbSet<Teacher> Teachers { get; set; }
 
-    //protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) => optionsBuilder.UseNpgsql("Host=localhost;Database=CourseworkDatabase;Username=postgres;Password=oneplustwoequalsthreeoneplustwoequalsthree;Include Error Detail=true");
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) => optionsBuilder.UseNpgsql("Host=localhost;Database=CourseworkDatabase;Username=postgres;Password=oneplustwoequalsthreeoneplustwoequalsthree;Include Error Detail=true");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema("public");
 
-        modelBuilder.Entity<Assignment>(entity =>
+        modelBuilder.Entity<Student>(student =>
         {
-            entity.HasIndex(e => e.StudentPassword, "IX_Assignments_StudentPassword");
+            student.HasIndex(st => st.Id);
+            student.HasKey(st => st.Id);
 
-            entity.Property(e => e.Id).ValueGeneratedNever();
+            student.Property(st => st.Name);
+            student.Property(st => st.Password);
 
-            entity.HasOne(d => d.StudentPasswordNavigation).WithMany(p => p.Assignments).HasForeignKey(d => d.StudentPassword);
+            student.HasMany(st => st.CurrentClasses).WithMany(@class => @class.Students);
+            student.HasMany(st => st.Assignments).WithOne(a => a.Student).HasForeignKey(a => a.StudentId);
+            student.HasMany(st => st.PaperResults).WithOne(p => p.Student).HasForeignKey(p => p.StudentId);
         });
 
-        modelBuilder.Entity<Class>(entity =>
+        modelBuilder.Entity<Teacher>(teacher =>
         {
-            entity.HasIndex(e => e.TeacherPassword, "IX_Classes_TeacherPassword");
+            teacher.HasIndex(teacher => teacher.Id);
+            teacher.HasKey(teacher => teacher.Id);
 
-            entity.Property(e => e.Id).ValueGeneratedNever();
+            teacher.Property(teacher => teacher.Name);
+            teacher.Property(teacher => teacher.Password);
 
-            entity.HasOne(d => d.TeacherNavigation).WithMany(p => p.Classes).HasForeignKey(d => d.TeacherPassword);
-
-            entity.HasMany(d => d.Students).WithMany(p => p.CurrentClasses)
-                .UsingEntity<Dictionary<string, object>>(
-                    "StudentInClass",
-                    r => r.HasOne<Student>().WithMany().HasForeignKey("StudentsPassword"),
-                    l => l.HasOne<Class>().WithMany().HasForeignKey("CurrentClassesId"),
-                    j =>
-                    {
-                        j.HasKey("CurrentClassesId", "StudentsPassword");
-                        j.ToTable("StudentInClass");
-                        j.HasIndex(new[] { "StudentsPassword" }, "IX_StudentInClass_StudentsPassword");
-                    });
+            teacher.HasMany(teacher => teacher.Classes).WithOne(@class => @class.TeacherNavigation);
         });
 
-        modelBuilder.Entity<PaperResult>(entity =>
+        modelBuilder.Entity<Class>(@class =>
         {
-            entity.HasIndex(e => e.AssignmentId, "IX_PaperResults_AssignmentId");
+            @class.HasIndex(cl => cl.Id);
+            @class.HasKey(cl => cl.Id);
 
-            entity.HasIndex(e => e.StudentPassword, "IX_PaperResults_StudentPassword");
-
-            entity.Property(e => e.Id).ValueGeneratedNever();
-
-            entity.HasOne(d => d.Assignment).WithMany(p => p.PaperResults).HasForeignKey(d => d.AssignmentId);
-
-            entity.HasOne(d => d.StudentPasswordNavigation).WithMany(p => p.PaperResults).HasForeignKey(d => d.StudentPassword);
+            @class.HasOne(cl => cl.TeacherNavigation).WithMany(teacher => teacher.Classes).HasForeignKey(cl => cl.TeacherId);
+            @class.HasMany(cl => cl.Students).WithMany(st => st.CurrentClasses);
         });
 
-        modelBuilder.Entity<Question>(entity =>
+        modelBuilder.Entity<Assignment>(assignment =>
         {
-            entity.HasIndex(e => e.AssignmentId, "IX_Questions_AssignmentId");
+            assignment.HasIndex(a => a.Id);
+            assignment.HasKey(a => a.Id);
 
-            entity.Property(e => e.Id).ValueGeneratedNever();
+            assignment.Property(a => a.Due);
+            assignment.Property(a => a.Set);
 
-            entity.HasOne(d => d.Assignment).WithMany(p => p.Questions).HasForeignKey(d => d.AssignmentId);
+            assignment.HasMany(a => a.PaperResults).WithOne(p => p.Assignment).HasForeignKey(p => p.AssignmentId);
+            assignment.HasMany(a => a.Questions).WithOne(q => q.Assignment).HasForeignKey(q => q.AssignmentId);
+
+            assignment.HasOne(a => a.Student).WithMany(st => st.Assignments).HasForeignKey(a => a.StudentId);
         });
 
-        modelBuilder.Entity<Student>(entity =>
+        modelBuilder.Entity<PaperResult>(paperResult =>
         {
-            entity.HasKey(e => e.Password);
+            paperResult.HasIndex(p => p.Id);
+            paperResult.HasKey(p => p.Id);
+
+            paperResult.Property(p => p.Score);
+
+            paperResult.HasOne(p => p.Student).WithMany(st => st.PaperResults).HasForeignKey(p => p.StudentId);
+            paperResult.HasOne(p => p.Assignment).WithMany(a => a.PaperResults).HasForeignKey(a => a.AssignmentId);
         });
 
-        modelBuilder.Entity<Teacher>(entity =>
+        modelBuilder.Entity<Question>(question =>
         {
-            entity.HasKey(e => e.Password);
-        });
+            question.HasIndex(q => q.Id);
+            question.HasKey(q => q.Id);
 
-        OnModelCreatingPartial(modelBuilder);
+            question.Property(q => q.Data);
+            question.Property(q => q.ReadData);
+
+            question.HasOne(q => q.Assignment).WithMany(a => a.Questions).HasForeignKey(q => q.AssignmentId);
+        });
     }
-
-    partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
 }

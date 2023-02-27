@@ -4,12 +4,8 @@ using System.Text.Json.Serialization;
 
 namespace CourseworkPastPaperApplication2.Shared;
 
-public partial class Student
+public class Student : User
 {
-    public long Password { get; set; }
-
-    public string Name { get; set; } = null!;
-
     public virtual ICollection<Assignment> Assignments { get; } = new List<Assignment>();
 
     public virtual ICollection<PaperResult> PaperResults { get; } = new List<PaperResult>();
