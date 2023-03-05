@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace CourseworkPastPaperApplication2
 {
@@ -36,6 +37,7 @@ namespace CourseworkPastPaperApplication2
             });
             builder.Services.AddScoped<PasswordHasher<string>>();
             builder.Services.AddScoped<UserValidator>();
+            builder.Services.AddScoped<User>(x => new Teacher());
             
             var app = builder.Build();
 
@@ -151,7 +153,7 @@ namespace CourseworkPastPaperApplication2
             return await db.Teachers.FirstOrDefaultAsync(teacher => teacher.Id == Id);
         }
 
-        private static async Task<IResult> ValidateTeacher([FromServices] UserValidator validator, [FromServices] PasswordHasher<string> hasher, [FromServices] PapersDbContext db, [FromBody] UserWithUnencryptedPassword user)
+        private static async Task<IResult> ValidateTeacher([FromServices] User userInstance, [FromServices] UserValidator validator, [FromServices] PasswordHasher<string> hasher, [FromServices] PapersDbContext db, [FromBody] UserWithUnencryptedPassword user)
         {
             ValidationResult validationResult = await validator.ValidateAsync(user);
             
@@ -162,17 +164,22 @@ namespace CourseworkPastPaperApplication2
                 return Results.ValidationProblem(validationResult.Errors.ToDictionary());
             }
 
-            bool inDatabase = await db.Teachers.Where(teacher => teacher.Name == user.Name)
-                                               .Select(teacher => new { user.Name, Password = PapersDbContext.SQLUtf8ToString(teacher.Password) })
+            var queriedTeacher = await db.Teachers.Where(teacher => teacher.Name == user.Name)
+                                               .Select(teacher => new { teacher.Id, user.Name, Password = PapersDbContext.SQLUtf8ToString(teacher.Password) })
                                                .AsAsyncEnumerable()
-                                               .AnyAsync(teacher => (hasher.VerifyHashedPassword(teacher.Name, teacher.Password, user.Password) & (PasswordVerificationResult.Success | PasswordVerificationResult.SuccessRehashNeeded)) != 0);
+                                               .FirstOrDefaultAsync(teacher => (hasher.VerifyHashedPassword(teacher.Name, teacher.Password, user.Password) & (PasswordVerificationResult.Success | PasswordVerificationResult.SuccessRehashNeeded)) != 0);
 
-            if (!inDatabase)
+
+            if (queriedTeacher is null)
             {
                 return Results.NotFound(user);
             }
 
-            return Results.Ok(user);
+            userInstance.Id = queriedTeacher.Id;
+            userInstance.Name = queriedTeacher.Name;
+            userInstance.PasswordAsHex = queriedTeacher.Password;
+
+            return Results.Ok(userInstance);
         }
 
         /// <summary>
@@ -182,6 +189,8 @@ namespace CourseworkPastPaperApplication2
         public static async Task<IResult> SignUpTeacher([FromServices] UserValidator validator, [FromServices] PasswordHasher<string> hasher, [FromServices] PapersDbContext db, [FromBody] UserWithUnencryptedPassword user)
         {
             ValidationResult validationResult = await validator.ValidateAsync(user);
+            
+            Task<bool> inDatabase = db.Teachers.AnyAsync(teacher => teacher.Name == user.Name);
 
             if (!validationResult.IsValid)
             {
@@ -190,12 +199,7 @@ namespace CourseworkPastPaperApplication2
                 return Results.ValidationProblem(validationResult.Errors.ToDictionary());
             }
 
-            bool inDatabase = await db.Teachers.Where(teacher => teacher.Name == user.Name)
-                                               .Select(teacher => new { user.Name, Password = PapersDbContext.SQLUtf8ToString(teacher.Password) })
-                                               .AsAsyncEnumerable()
-                                               .AnyAsync(teacher => (hasher.VerifyHashedPassword(teacher.Name, teacher.Password, user.Password) & (PasswordVerificationResult.Success | PasswordVerificationResult.SuccessRehashNeeded)) != 0);
-
-            if (inDatabase)
+            if (await inDatabase)
             {
                 return Results.Conflict(user);
             }

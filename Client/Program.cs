@@ -1,6 +1,9 @@
 using CourseworkPastPaperApplication2.Client;
+using CourseworkPastPaperApplication2.Shared;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using Blazored;
+using Blazored.LocalStorage;
 
 namespace CourseworkPastPaperApplication2.Client
 {
@@ -13,6 +16,7 @@ namespace CourseworkPastPaperApplication2.Client
             builder.RootComponents.Add<HeadOutlet>("head::after");
 
             builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
+            builder.Services.AddBlazoredLocalStorage();
 
             await builder.Build().RunAsync();
         }

@@ -1,8 +1,10 @@
 ﻿@inherits LayoutComponentBase
+@inject ILocalStorageService LocalStorage
 
 <div class="page">
     <main>
         <div class="top-row px-4">
+            <p class="navbar-text">@username</p>
             <a href="https://docs.microsoft.com/aspnet/" target="_blank">About</a>
         </div>
 
@@ -11,3 +13,23 @@
         </article>
     </main>
 </div>
+
+@code
+{
+    private string? username = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        LocalStorage.Changed += (sender, e) =>
+        {
+            if (e.Key != "user")
+            {
+                return;
+            }
+
+            username = ((User)e.NewValue).Name;
+        };
+
+        await base.OnInitializedAsync();
+    }
+}

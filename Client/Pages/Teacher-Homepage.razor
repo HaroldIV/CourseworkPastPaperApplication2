@@ -1,7 +1,25 @@
 ﻿@page "/teacher-homepage"
+@inject NavigationManager NavManager
 
 <PageTitle>Homepage</PageTitle>
 
-<h1>Hello, world!</h1>
-
-Welcome to your new app.
+<div style="display: grid">
+    <NavLink href="/upload-papers">
+        Upload Papers
+    </NavLink>
+    <NavLink href="/view-classes-assignments">
+        View Classes/Assignments
+    </NavLink>
+    <NavLink href="/search-questions">
+        Search Questions
+    </NavLink>
+    <NavLink href="/view-tests">
+        View Tests
+    </NavLink>
+    <NavLink href="/view-mark-schemes">
+        View Mark Schemes
+    </NavLink>
+    <NavLink href="/user-management">
+        User Management
+    </NavLink>
+</div>
