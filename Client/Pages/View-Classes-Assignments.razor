@@ -1,7 +1,87 @@
 ﻿@page "/view-classes-assignments"
+@inject HttpClient Http
+@inject ILocalStorageService LocalStorage
+@inject NavigationManager NavManager
+
 
 <PageTitle>View Classes and Assignments</PageTitle>
 
-<h1>Hello, world!</h1>
+<button @onclick='() => NavManager.NavigateTo("/add-class")'>Add Class</button>
 
-Welcome to your new app.
+@if (classes is not null)
+{
+    @foreach (var (i, _class) in classes.WithIndex())
+    {
+        @foreach (var student in _class.Students)
+        {
+            <StudentDisplayCheck Student="student" IsChecked="IsStudentChecked(_class, student)"/>
+        }
+
+        <button @onclick="() => RemoveStudents(classes[i])">Remove Selected Students</button>
+        <button @onclick="() => NavigateToAddStudentsToClass(classes[i])">Add Students to Class</button>
+        <button @onclick="() => RemoveClass(classes[i])">Remove Class</button>
+
+        <br>
+    }
+}
+
+@code
+{
+    private List<Class> classes { get; set; } = null!;
+    //private bool[] checks = null!;
+    Dictionary<ValueTuple<Class, Student>, bool> checks { get; set; } = null!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Teacher teacher = await LocalStorage.GetItemAsync<Teacher>("user");
+
+        classes = await Http.GetFromJsonAsync<List<Class>>($"https://localhost:7053/Teacher/{teacher.Id}/Classes") ?? new List<Class>();
+
+        int totalStudents = classes.Sum(_class => _class.Students.Count);
+
+        checks = new Dictionary<ValueTuple<Class, Student>, bool>(totalStudents);
+
+        foreach (Class _class in classes)
+        {
+            foreach (Student student in _class.Students)
+            {
+                checks[(_class, student)] = false;
+            }
+        }
+
+        await base.OnInitializedAsync();
+    }
+
+    private async Task RemoveStudents(Class _class)
+    {
+        var studentsToRemove = _class.Students.Where(student => checks[(_class, student)]).ToArray();
+
+        foreach (Student student in studentsToRemove)
+        {
+            _class.Students.Remove(student);
+        }
+
+        StateHasChanged();
+
+        await Http.PutAsJsonAsync($"https://localhost:7053/Class/{_class.Id}/Remove", studentsToRemove);
+    }
+
+    private bool IsStudentChecked(Class _class, Student student)
+    {
+        return checks[(_class, student)];
+    }
+
+    private void NavigateToAddStudentsToClass(Class _class)
+    {
+        NavManager.NavigateTo($"/add-students-to-class/{_class.Id}");
+    }
+
+    private async Task RemoveClass(Class @class)
+    {
+        classes.Remove(@class);
+
+        StateHasChanged();
+
+        await Http.DeleteAsync($"/Class/{@class.Id}");
+    }
+}

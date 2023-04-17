@@ -36,7 +36,7 @@ namespace CourseworkPastPaperApplication2.Shared
         public byte[] Password { get; set; } = null!;
 
         [JsonIgnore]
-        public string PasswordAsHex { set => Password = Encoding.UTF8.GetBytes(value); }
+        public string PasswordAsHex { get => Encoding.UTF8.GetString(Password); set => Password = Encoding.UTF8.GetBytes(value); }
 
         public static byte[] SQLStringToUtf8(string password)
         {

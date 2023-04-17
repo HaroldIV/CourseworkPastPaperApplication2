@@ -1,0 +1,31 @@
+﻿@page "/add-class"
+@inject HttpClient Http
+@using MyProject.Components;
+@inject ILocalStorageService LocalStorage
+
+<PageTitle>Add Class</PageTitle>
+
+<AddStudents @ref="addStudentsComponentReference"/>
+
+<button @onclick="AddNewClass">Add new Class</button>
+
+
+@code
+{
+    private AddStudents addStudentsComponentReference = null!;
+
+    private Func<Task> SearchForStudent { get; set; } = null!;
+
+    private async Task AddNewClass()
+    {
+        ValueTask<Teacher> teacher = LocalStorage.GetItemAsync<Teacher>("user");
+
+        var response = await Http.PostAsJsonAsync<ISet<Student>>($"https://localhost:7053/Teacher/{(await teacher).Id}/Classes", addStudentsComponentReference.Students);
+
+        addStudentsComponentReference.Students.Clear();
+
+        await addStudentsComponentReference.SearchForStudentsFunc();
+
+        StateHasChanged();
+    }
+}

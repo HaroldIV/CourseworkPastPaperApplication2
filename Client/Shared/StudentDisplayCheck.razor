@@ -1,0 +1,24 @@
+﻿@using Microsoft.AspNetCore.Components.Web
+@using Syncfusion.Blazor
+@using Syncfusion.Blazor.Buttons
+@namespace MyProject.Components
+
+<div class="rectangle">
+    <SfCheckBox Label="@Student.Name" @bind-Checked="IsChecked" ValueChange="(ChangeEventArgs<bool> e) => HandleCheck(e.Checked)"/>
+</div>
+
+@code {
+    [Parameter]
+    public bool IsChecked { get; set; }
+
+    [Parameter]
+    public Student Student { get; set; } = null!;
+
+    [Parameter]
+    public Action<bool, Student>? OnCheck { get; set; }
+
+    private void HandleCheck(bool isChecked)
+    {
+        OnCheck?.Invoke(isChecked, Student);
+    }
+}

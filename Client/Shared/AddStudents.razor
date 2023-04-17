@@ -1,0 +1,103 @@
+﻿@using MyProject.Components
+@inject HttpClient Http
+@inject ILocalStorageService LocalStorage
+
+@*
+    Issue: To use this component, must use a reference with @ref. 
+    Solution: Figure out how bindings work in reverse.
+    Steps: Posted question on Stackoverflow.
+*@
+
+<EditForm OnSubmit="@SearchForStudent" Model="username">
+    <label>
+        Student Username
+        <InputText @bind-Value=username/>
+    </label>
+    <button type="submit">Search</button>
+</EditForm>
+
+<h3>Class being made</h3>
+
+@foreach (Student student in Students)
+{
+    <StudentDisplayCheck Student="student" IsChecked="@IsStudentChecked(student)" OnCheck="(isChecked, student) => UpdateStudentCheckedStatus(isChecked, student)"/>
+}
+
+<hr>
+
+<p>@Students.Count</p>
+<p>@searchResults.Count</p>
+
+<h3>Search Results</h3>
+
+@foreach (Student student in searchResults)
+{
+    <StudentDisplayCheck Student="student" IsChecked="@IsStudentChecked(student)" OnCheck="(isChecked, student) => UpdateStudentCheckedStatus(isChecked, student)"/>
+}
+
+@code
+{
+    [Parameter]
+    public ISet<Student> Students { get; set; } = new HashSet<Student>();
+
+    [Parameter]
+    public Func<Task> SearchForStudentsFunc { get; set; } = null!; 
+
+    private string username = string.Empty;
+
+    private ISet<Student> searchResults = new HashSet<Student>();
+
+    private Dictionary<Student, bool> checkedStatuses = new Dictionary<Student, bool>();
+
+    protected override void OnInitialized()
+    {
+        SearchForStudentsFunc = SearchForStudent; 
+
+        base.OnInitialized();
+    }
+
+    private async Task SearchForStudent()
+    {
+        if (string.IsNullOrWhiteSpace(username))
+        {
+            return; 
+        }
+
+        searchResults = (await Http.GetFromJsonAsync<HashSet<Student>>($"https://localhost:7053/Student/SoundsLike/{username}") ?? new HashSet<Student>());
+
+        searchResults.ExceptWith(Students);
+
+        foreach (var searchResult in searchResults)
+        {
+            checkedStatuses[searchResult] = false;
+        }
+
+        StateHasChanged();
+    }
+
+    private bool IsStudentChecked(Student student)
+    {
+        return checkedStatuses.ContainsKey(student) && checkedStatuses[student];
+    }
+
+    private void UpdateStudentCheckedStatus(bool isChecked, Student student)
+    {
+        if (isChecked)
+        {
+            Students.Add(student);
+
+            checkedStatuses[student] = true;
+            searchResults.Remove(student);
+
+            StateHasChanged();
+
+            return; 
+        }
+
+        Students.Remove(student);
+
+        checkedStatuses[student] = false;
+
+        StateHasChanged();
+    }
+}

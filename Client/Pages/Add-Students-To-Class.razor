@@ -1,0 +1,38 @@
+﻿@page "/add-students-to-class/{ClassId:guid}"
+@using MyProject.Components
+@inject HttpClient Http
+@inject NavigationManager NavManager
+
+<PageTitle>Add Students To Class</PageTitle>
+
+@if (selectedClass is not null)
+{
+    <AddStudents @ref="addStudentsComponentReference"/>
+}
+
+<button @onclick="AddStudentsToClass">Add Students to Class</button>
+
+@code
+{
+
+    [Parameter]
+    public Guid ClassId { get; set; }
+
+    private ISet<Student> selectedClass = null!; 
+
+    private AddStudents addStudentsComponentReference = null!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        selectedClass = await Http.GetFromJsonAsync<HashSet<Student>>($"https://localhost:7053/Class/{ClassId}/Students") ?? Enumerable.Empty<Student>().ToHashSet();
+
+        await base.OnInitializedAsync();
+    }
+
+    private async Task AddStudentsToClass()
+    {
+        var response = await Http.PutAsJsonAsync<IEnumerable<Student>>($"https://localhost:7053/Class/{ClassId}/Add", addStudentsComponentReference.Students.Except(selectedClass));
+
+        NavManager.NavigateTo("/view-classes-assignments");
+    }
+}

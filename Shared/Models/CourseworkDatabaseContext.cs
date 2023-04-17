@@ -2,6 +2,10 @@
 using System.Collections.Generic;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query;
+using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
+using Npgsql.EntityFrameworkCore.PostgreSQL;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Query.Expressions.Internal;
 
 namespace CourseworkPastPaperApplication2.Shared;
 
@@ -22,6 +26,9 @@ public class PapersDbContext : DbContext
         return Encoding.UTF8.GetString(bytes);
     }
 
+    [DbFunction("soundex", IsBuiltIn = true)]
+    public static string Soundex(string argument) => throw new InvalidOperationException(nameof(Soundex));
+
     public virtual DbSet<Assignment> Assignments { get; set; }
 
     public virtual DbSet<Class> Classes { get; set; }
@@ -40,6 +47,8 @@ public class PapersDbContext : DbContext
     {
         modelBuilder.HasDefaultSchema("public");
 
+        modelBuilder.HasPostgresExtension("fuzzystrmatch");
+
         modelBuilder.Entity<Student>(student =>
         {
             student.HasIndex(st => st.Id);
@@ -47,6 +56,8 @@ public class PapersDbContext : DbContext
 
             student.Property(st => st.Name);
             student.Property(st => st.Password);
+
+            student.Ignore(st => st.PasswordAsHex);
 
             student.HasMany(st => st.CurrentClasses).WithMany(@class => @class.Students);
             student.HasMany(st => st.Assignments).WithOne(a => a.Student).HasForeignKey(a => a.StudentId);
@@ -60,6 +71,8 @@ public class PapersDbContext : DbContext
 
             teacher.Property(teacher => teacher.Name);
             teacher.Property(teacher => teacher.Password);
+
+            teacher.Ignore(st => st.PasswordAsHex);
 
             teacher.HasMany(teacher => teacher.Classes).WithOne(@class => @class.TeacherNavigation);
         });

@@ -1,0 +1,109 @@
+﻿@using System.Text.Json
+@inject HttpClient Http
+@inject NavigationManager NavManager
+@typeparam TUser
+
+<h1 style="font-family:'Cascadia Code'">Sign Up</h1>
+
+@code
+{
+    string nameId => $"{userType.ToLower()}-name";
+    string passwordId => $"{userType.ToLower()}-password";
+}
+
+<EditForm Model="user" OnSubmit="HandleSubmit">
+    <InputText id="@nameId" placeholder="Full Name" @bind-Value="username" />
+    <InputText id="@passwordId" placeholder="Password" type="password" @bind-Value="password" />
+    <button type="submit">Submit</button>
+</EditForm>
+
+Welcome.
+
+@if (success is null)
+{
+    <p>Not yet.</p>
+}
+else if (success.Value)
+{
+    <p>Added!</p>
+}
+else
+{
+    <ul>
+        @foreach (string error in errors)
+        {
+            <li>@error</li>
+        }
+    </ul>
+}
+
+@code
+{
+    private string username { get => user.Name; set => user.Name = value; }
+    private string password { get => user.Password; set => user.Password = value; }
+
+    private string userType = typeof(TUser).Name;
+
+    private bool? success = null;
+    private UserWithUnencryptedPassword user = new UserWithUnencryptedPassword();
+    private List<string> errors = new List<string>();
+
+    private async Task HandleSubmit()
+    {
+#if DEBUG
+    Console.WriteLine($"Attempting to sign-up user with name {user.Name}, password {user.Password}.");
+#endif
+
+        errors.Clear();
+
+        if (user.Name is null)
+        {
+            errors.Add("UNEXPECTED ERROR");
+        }
+        if (user.Password is null)
+        {
+            errors.Add("UNEXPECTED ERROR");
+        }
+
+
+        var result = await Http.PostAsJsonAsync<UserWithUnencryptedPassword>($"https://localhost:7053/SignUp{userType}", user);
+
+        if (result.IsSuccessStatusCode)
+        {
+            success = true;
+
+            Console.WriteLine("Navigating to Login");
+            NavManager.NavigateTo("/");
+
+            return;
+        }
+
+        success = false;
+
+        switch (result.StatusCode)
+        {
+            case HttpStatusCode.NotFound:
+                errors.Add($"User {user.Name} with given password not found.");
+                break;
+            case HttpStatusCode.BadRequest:
+                errors.Add($"User {user.Name} could not be validated.");
+                JsonDocument doc = await JsonDocument.ParseAsync(result.Content.ReadAsStream());
+                var errorLists = doc.RootElement.GetProperty("errors").Deserialize<Dictionary<string, string[]>>() ?? Enumerable.Empty<KeyValuePair<string, string[]>>();
+
+                foreach (var errorList in errorLists)
+                {
+                    foreach (var error in errorList.Value)
+                    {
+                        errors.Add($"{errorList.Key}\t:\t{error}");
+                    }
+                }
+                break;
+            case HttpStatusCode.Conflict:
+                errors.Add($"Account with username {user.Name} already exists.");
+                break;
+            default:
+                errors.Add("UNEXPECTED ERROR");
+                break;
+        }
+    }
+}

@@ -1,5 +1,7 @@
 ﻿using CourseworkPastPaperApplication2.Shared;
 using FluentValidation;
+using System.Linq;
+using System.Collections.Generic;
 
 namespace CourseworkPastPaperApplication2.Server
 {
@@ -20,13 +22,13 @@ namespace CourseworkPastPaperApplication2.Server
             RuleFor(user => user.Password).NotNull()
                                           .MinimumLength(PasswordMinimumLength).WithMessage($"Password was too short. Minimum length {PasswordMinimumLength}.")
                                           .MaximumLength(PasswordMaximumLength).WithMessage($"Password was too long. Maximum length {PasswordMaximumLength}.")
-                                          .Must(pass => pass.All(validPasswordChars.Contains));
+                                          .Must(pass => pass.All(validPasswordChars.Contains)).WithMessage($"Cam only have alphanumeric characters and the following symbols: '{string.Concat(validPasswordChars.Where(c => !char.IsAsciiLetterOrDigit(c)))}'");
         }
     }
 
     public class ValidCharsHashSetSingleton : HashSet<char>
     {
-        private const string ValidPasswordCharacters = """abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ "~`!@#$%^&*()_-+={}[]|\:;'<,>.?/""";
+        private const string ValidPasswordCharacters = """abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890 "~`!@#$%^&*()_-+={}[]|\:;'<,>.?/""";
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         private static ValidCharsHashSetSingleton instance;
