@@ -14,7 +14,7 @@
     {
         @foreach (var student in _class.Students)
         {
-            <StudentDisplayCheck Student="student" IsChecked="IsStudentChecked(_class, student)"/>
+            <StudentDisplayCheck Student="student" IsChecked="IsStudentChecked(_class, student)" OnCheck="Check(_class, student)"/>
         }
 
         <button @onclick="() => RemoveStudents(classes[i])">Remove Selected Students</button>
@@ -59,6 +59,7 @@
         foreach (Student student in studentsToRemove)
         {
             _class.Students.Remove(student);
+            checks.Remove((_class, student));
         }
 
         StateHasChanged();
@@ -69,6 +70,11 @@
     private bool IsStudentChecked(Class _class, Student student)
     {
         return checks[(_class, student)];
+    }
+
+    private void Check(Class _class, Student student)
+    {
+        checks[(_class, student)] = true; 
     }
 
     private void NavigateToAddStudentsToClass(Class _class)
