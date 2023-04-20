@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace CourseworkPastPaperApplication2.Shared
 {
-    public abstract class User
+    public abstract class User : DbTable
     {
         public User()
         {
@@ -31,7 +31,6 @@ namespace CourseworkPastPaperApplication2.Shared
             PasswordAsHex = password;
         }
 
-        public Guid Id { get; set; } = Guid.NewGuid();
         public string Name { get; set; } = null!;
         public byte[] Password { get; set; } = null!;
 

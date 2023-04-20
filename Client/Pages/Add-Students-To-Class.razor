@@ -24,7 +24,11 @@
 
     protected override async Task OnInitializedAsync()
     {
-        selectedClass = await Http.GetFromJsonAsync<HashSet<Student>>($"https://localhost:7053/Class/{ClassId}/Students") ?? Enumerable.Empty<Student>().ToHashSet();
+        Console.WriteLine(await Http.GetStringAsync("https://localhost:7053/Teachers"));
+
+        Console.WriteLine(await Http.GetStringAsync($"https://localhost:7053/Class/{ClassId}/Students"));
+
+        selectedClass = await Http.GetFromJsonAsync<HashSet<Student>>($"https://localhost:7053/Classs/{ClassId}/Students") ?? Enumerable.Empty<Student>().ToHashSet();
 
         await base.OnInitializedAsync();
     }
