@@ -4,10 +4,8 @@ using System.Text.Json.Serialization;
 
 namespace CourseworkPastPaperApplication2.Shared;
 
-public class Class
+public class Class : DbTable
 {
-    public Guid Id { get; set; }
-
     public Guid TeacherId { get; set; }
 
     public virtual Teacher TeacherNavigation { get; set; } = null!;

@@ -3,10 +3,8 @@ using System.Collections.Generic;
 
 namespace CourseworkPastPaperApplication2.Shared;
 
-public class PaperResult
+public class PaperResult : DbTable
 {
-    public Guid Id { get; set; }
-
     public int Score { get; set; }
 
     public Guid AssignmentId { get => Assignment.Id; set => Assignment.Id = value; }

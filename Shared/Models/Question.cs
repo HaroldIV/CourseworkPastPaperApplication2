@@ -3,10 +3,8 @@ using System.Collections.Generic;
 
 namespace CourseworkPastPaperApplication2.Shared;
 
-public class Question
+public class Question : DbTable
 {
-    public Guid Id { get; set; }
-
     public byte[] Data { get; set; } = null!;
 
     public string ReadData { get; set; } = null!;

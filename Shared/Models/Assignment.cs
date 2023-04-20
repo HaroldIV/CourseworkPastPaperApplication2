@@ -3,10 +3,8 @@ using System.Collections.Generic;
 
 namespace CourseworkPastPaperApplication2.Shared;
 
-public class Assignment
+public class Assignment : DbTable
 {
-    public Guid Id { get; set; }
-
     public DateTime Set { get; set; }
 
     public DateTime Due { get; set; }

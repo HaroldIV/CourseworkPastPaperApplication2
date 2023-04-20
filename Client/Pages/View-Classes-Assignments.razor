@@ -14,7 +14,7 @@
     {
         @foreach (var student in _class.Students)
         {
-            <StudentDisplayCheck Student="student" IsChecked="IsStudentChecked(_class, student)" OnCheck="Check(_class, student)"/>
+            <StudentDisplayCheck Student="student" IsChecked="IsStudentChecked(_class, student)" OnCheck="(isChecked, student) => Check(_class, student)"/>
         }
 
         <button @onclick="() => RemoveStudents(classes[i])">Remove Selected Students</button>
@@ -29,7 +29,7 @@
 {
     private List<Class> classes { get; set; } = null!;
     //private bool[] checks = null!;
-    Dictionary<ValueTuple<Class, Student>, bool> checks { get; set; } = null!;
+    HashSet<ValueTuple<Class, Student>> checks { get; set; } = null!;
 
     protected override async Task OnInitializedAsync()
     {
@@ -39,22 +39,14 @@
 
         int totalStudents = classes.Sum(_class => _class.Students.Count);
 
-        checks = new Dictionary<ValueTuple<Class, Student>, bool>(totalStudents);
-
-        foreach (Class _class in classes)
-        {
-            foreach (Student student in _class.Students)
-            {
-                checks[(_class, student)] = false;
-            }
-        }
+        checks = new HashSet<ValueTuple<Class, Student>>(totalStudents);
 
         await base.OnInitializedAsync();
     }
 
     private async Task RemoveStudents(Class _class)
     {
-        var studentsToRemove = _class.Students.Where(student => checks[(_class, student)]).ToArray();
+        var studentsToRemove = _class.Students.Where(student => checks.Contains((_class, student))).ToArray();
 
         foreach (Student student in studentsToRemove)
         {
@@ -69,12 +61,12 @@
 
     private bool IsStudentChecked(Class _class, Student student)
     {
-        return checks[(_class, student)];
+        return checks.Contains((_class, student));
     }
 
     private void Check(Class _class, Student student)
     {
-        checks[(_class, student)] = true; 
+        checks.Add((_class, student)); 
     }
 
     private void NavigateToAddStudentsToClass(Class _class)
