@@ -18,9 +18,10 @@ namespace CourseworkPastPaperApplication2.Shared.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("public")
-                .HasAnnotation("ProductVersion", "7.0.2")
+                .HasAnnotation("ProductVersion", "7.0.5")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
+            NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "fuzzystrmatch");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("ClassStudent", b =>
@@ -80,6 +81,44 @@ namespace CourseworkPastPaperApplication2.Shared.Migrations
                     b.ToTable("Classes", "public");
                 });
 
+            modelBuilder.Entity("CourseworkPastPaperApplication2.Shared.ExamBoard", b =>
+                {
+                    b.Property<short>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("smallint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<short>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Id");
+
+                    b.ToTable("ExamBoards", "public");
+                });
+
+            modelBuilder.Entity("CourseworkPastPaperApplication2.Shared.Level", b =>
+                {
+                    b.Property<short>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("smallint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<short>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Id");
+
+                    b.ToTable("Levels", "public");
+                });
+
             modelBuilder.Entity("CourseworkPastPaperApplication2.Shared.PaperResult", b =>
                 {
                     b.Property<Guid>("Id")
@@ -119,6 +158,12 @@ namespace CourseworkPastPaperApplication2.Shared.Migrations
                         .IsRequired()
                         .HasColumnType("bytea");
 
+                    b.Property<short?>("ExamBoardId")
+                        .HasColumnType("smallint");
+
+                    b.Property<short?>("LevelId")
+                        .HasColumnType("smallint");
+
                     b.Property<string>("ReadData")
                         .IsRequired()
                         .HasColumnType("text");
@@ -127,7 +172,11 @@ namespace CourseworkPastPaperApplication2.Shared.Migrations
 
                     b.HasIndex("AssignmentId");
 
+                    b.HasIndex("ExamBoardId");
+
                     b.HasIndex("Id");
+
+                    b.HasIndex("LevelId");
 
                     b.ToTable("Questions", "public");
                 });
@@ -234,7 +283,19 @@ namespace CourseworkPastPaperApplication2.Shared.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("CourseworkPastPaperApplication2.Shared.ExamBoard", "ExamBoard")
+                        .WithMany()
+                        .HasForeignKey("ExamBoardId");
+
+                    b.HasOne("CourseworkPastPaperApplication2.Shared.Level", "Level")
+                        .WithMany()
+                        .HasForeignKey("LevelId");
+
                     b.Navigation("Assignment");
+
+                    b.Navigation("ExamBoard");
+
+                    b.Navigation("Level");
                 });
 
             modelBuilder.Entity("CourseworkPastPaperApplication2.Shared.Assignment", b =>

@@ -1,7 +1,100 @@
 ﻿@page "/upload-papers"
+@inject HttpClient Http
 
 <PageTitle>Upload Papers</PageTitle>
 
-<h1>Hello, world!</h1>
+<InputFile accept="image/*" OnChange="HandleFileChange"/>
 
-Welcome to your new app.
+<br>
+@*Extract this into a separate component*@
+@if (options is not null)
+{
+    <InputRadioGroup TValue="Level" @bind-Value="level">
+        <InputRadio Value="default(Level)"/> None
+        @foreach (Level levelOption in options.Levels)
+        {
+            <InputRadio Value="levelOption"/> 
+            @levelOption.Name
+        }
+    </InputRadioGroup>
+    <br>
+    <hr>
+    <InputRadioGroup TValue="ExamBoard" @bind-Value="examBoard">
+        <InputRadio Value="default(ExamBoard)"/> None
+        @foreach (ExamBoard examBoardOption in options.ExamBoards)
+        {
+            <InputRadio Value="examBoardOption" /> @examBoardOption.Name
+        }
+    </InputRadioGroup>
+}
+
+<br>
+
+<button @onclick="HandleSubmit">Submit File</button>
+
+@if (url is not null)
+{
+    <img src="@url"/>
+}
+
+@code
+{
+    private RadioOptions? options { get; set; }
+    
+    private Level? level { get; set; }
+    private ExamBoard? examBoard { get; set; }
+    private string? url {get; set; }
+
+    IBrowserFile? image;
+    byte[]? imageData; 
+
+    protected override async Task OnInitializedAsync()
+    {
+        options = await Http.GetFromJsonAsync<RadioOptions>("https://localhost:7053/Options") ?? new RadioOptions(ExamBoards: Array.Empty<ExamBoard>(), Levels: Array.Empty<Level>());
+
+        await base.OnInitializedAsync();
+    }
+
+    private async Task HandleFileChange(InputFileChangeEventArgs e)
+    {
+        image = e.File;
+
+        /// Could be optimised to avoid unnecessary allocations
+        using (var reader = new MemoryStream())
+        {
+            await image.OpenReadStream().CopyToAsync(reader);
+
+            imageData = reader.ToArray(); 
+
+            string base64Image = Convert.ToBase64String(imageData);
+
+            url = $"""data:{image.ContentType};base64,{base64Image}""";
+
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (image is null)
+        {
+            return;
+        }
+
+        Question question = new Question { Data = imageData ?? throw new ArgumentNullException($"{nameof(imageData)} was null"), ExamBoard = examBoard, Level = level };
+
+        var response = await Http.PostAsJsonAsync<Question>("https://localhost:7053/Image", question);
+
+        if (response.IsSuccessStatusCode)
+        {
+            Console.WriteLine("File sent successfully");
+
+            Console.WriteLine($"Image Text: {await response.Content.ReadAsStringAsync()}");
+
+            return;
+        }
+
+        Console.WriteLine("ERROR: FILE SENDING FAILED");
+    }
+}

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Query;
 using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
 using Npgsql.EntityFrameworkCore.PostgreSQL;
@@ -40,6 +41,10 @@ public class PapersDbContext : DbContext
     public virtual DbSet<Student> Students { get; set; }
 
     public virtual DbSet<Teacher> Teachers { get; set; }
+
+    public virtual DbSet<ExamBoard> ExamBoards { get; set; }
+
+    public virtual DbSet<Level> Levels { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) => optionsBuilder.UseNpgsql("Host=localhost;Database=CourseworkDatabase;Username=postgres;Password=oneplustwoequalsthreeoneplustwoequalsthree;Include Error Detail=true");
 
@@ -119,7 +124,21 @@ public class PapersDbContext : DbContext
             question.Property(q => q.Data);
             question.Property(q => q.ReadData);
 
+            question.HasOne(q => q.Level).WithMany().IsRequired(false);
+            question.HasOne(q => q.ExamBoard).WithMany().IsRequired(false);
+
             question.HasOne(q => q.Assignment).WithMany(a => a.Questions).HasForeignKey(q => q.AssignmentId);
         });
+
+        modelBuilder.Entity<ExamBoard>(SetUpFilterOptions);
+        modelBuilder.Entity<Level>(SetUpFilterOptions);
+    }
+
+    private static void SetUpFilterOptions<T>(EntityTypeBuilder<T> filterOption) where T : class, IFilterOption
+    {
+        filterOption.HasIndex(board => board.Id);
+        filterOption.HasKey(board => board.Id);
+
+        filterOption.Property(board => board.Name);
     }
 }
