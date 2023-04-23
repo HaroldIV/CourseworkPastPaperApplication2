@@ -10,20 +10,19 @@
 @if (options is not null)
 {
     <InputRadioGroup TValue="Level" @bind-Value="level">
-        <InputRadio Value="default(Level)"/> None
-        @foreach (Level levelOption in options.Levels)
+        @foreach (Level? levelOption in options.Levels.Prepend(null))
         {
             <InputRadio Value="levelOption"/> 
-            @levelOption.Name
+            @(levelOption?.Name ?? "None")
         }
     </InputRadioGroup>
     <br>
     <hr>
     <InputRadioGroup TValue="ExamBoard" @bind-Value="examBoard">
-        <InputRadio Value="default(ExamBoard)"/> None
-        @foreach (ExamBoard examBoardOption in options.ExamBoards)
+        @foreach (ExamBoard? examBoardOption in options.ExamBoards.Prepend(null))
         {
-            <InputRadio Value="examBoardOption" /> @examBoardOption.Name
+            <InputRadio Value="examBoardOption"/>
+            @(examBoardOption?.Name ?? "None")
         }
     </InputRadioGroup>
 }
@@ -40,10 +39,10 @@
 @code
 {
     private RadioOptions? options { get; set; }
-    
+
     private Level? level { get; set; }
     private ExamBoard? examBoard { get; set; }
-    private string? url {get; set; }
+    private string? url { get; set; }
 
     IBrowserFile? image;
     byte[]? imageData; 

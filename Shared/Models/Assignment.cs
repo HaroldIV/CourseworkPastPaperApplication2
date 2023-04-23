@@ -9,6 +9,8 @@ public class Assignment : DbTable
 
     public DateTime Due { get; set; }
 
+    public string Name { get; set; } = null!;
+
     public Guid? StudentId
     {
         get => Student!.Id;

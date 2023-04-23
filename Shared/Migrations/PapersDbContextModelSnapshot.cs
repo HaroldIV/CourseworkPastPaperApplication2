@@ -24,6 +24,21 @@ namespace CourseworkPastPaperApplication2.Shared.Migrations
             NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "fuzzystrmatch");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("AssignmentQuestion", b =>
+                {
+                    b.Property<Guid>("AssignmentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("QuestionsId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("AssignmentId", "QuestionsId");
+
+                    b.HasIndex("QuestionsId");
+
+                    b.ToTable("AssignmentQuestion", "public");
+                });
+
             modelBuilder.Entity("ClassStudent", b =>
                 {
                     b.Property<Guid>("CurrentClassesId")
@@ -48,6 +63,10 @@ namespace CourseworkPastPaperApplication2.Shared.Migrations
                     b.Property<DateTime>("Due")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<DateTime>("Set")
                         .HasColumnType("timestamp with time zone");
 
@@ -68,6 +87,10 @@ namespace CourseworkPastPaperApplication2.Shared.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<Guid>("TeacherId")
                         .HasColumnType("uuid");
@@ -151,9 +174,6 @@ namespace CourseworkPastPaperApplication2.Shared.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("AssignmentId")
-                        .HasColumnType("uuid");
-
                     b.Property<byte[]>("Data")
                         .IsRequired()
                         .HasColumnType("bytea");
@@ -169,8 +189,6 @@ namespace CourseworkPastPaperApplication2.Shared.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("AssignmentId");
 
                     b.HasIndex("ExamBoardId");
 
@@ -221,6 +239,21 @@ namespace CourseworkPastPaperApplication2.Shared.Migrations
                     b.HasIndex("Id");
 
                     b.ToTable("Teachers", "public");
+                });
+
+            modelBuilder.Entity("AssignmentQuestion", b =>
+                {
+                    b.HasOne("CourseworkPastPaperApplication2.Shared.Assignment", null)
+                        .WithMany()
+                        .HasForeignKey("AssignmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CourseworkPastPaperApplication2.Shared.Question", null)
+                        .WithMany()
+                        .HasForeignKey("QuestionsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("ClassStudent", b =>
@@ -277,12 +310,6 @@ namespace CourseworkPastPaperApplication2.Shared.Migrations
 
             modelBuilder.Entity("CourseworkPastPaperApplication2.Shared.Question", b =>
                 {
-                    b.HasOne("CourseworkPastPaperApplication2.Shared.Assignment", "Assignment")
-                        .WithMany("Questions")
-                        .HasForeignKey("AssignmentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("CourseworkPastPaperApplication2.Shared.ExamBoard", "ExamBoard")
                         .WithMany()
                         .HasForeignKey("ExamBoardId");
@@ -290,8 +317,6 @@ namespace CourseworkPastPaperApplication2.Shared.Migrations
                     b.HasOne("CourseworkPastPaperApplication2.Shared.Level", "Level")
                         .WithMany()
                         .HasForeignKey("LevelId");
-
-                    b.Navigation("Assignment");
 
                     b.Navigation("ExamBoard");
 
@@ -301,8 +326,6 @@ namespace CourseworkPastPaperApplication2.Shared.Migrations
             modelBuilder.Entity("CourseworkPastPaperApplication2.Shared.Assignment", b =>
                 {
                     b.Navigation("PaperResults");
-
-                    b.Navigation("Questions");
                 });
 
             modelBuilder.Entity("CourseworkPastPaperApplication2.Shared.Student", b =>

@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Blazored;
 using Blazored.LocalStorage;
 using Syncfusion.Blazor;
+using System;
+using Microsoft.AspNetCore.Components.Forms;
 
 namespace CourseworkPastPaperApplication2.Client
 {
@@ -29,5 +31,17 @@ namespace CourseworkPastPaperApplication2.Client
     public static class Extensions
     {
         public static IEnumerable<(int, T)> WithIndex<T>(this IEnumerable<T> values) => values.Select((value, i) => (i, value));
+
+        public static async Task<string> ImageToDataUrlAsync(this IBrowserFile image)
+        {
+            /// Could be optimised to avoid unnecessary allocations
+            using var reader = new MemoryStream();
+
+            await image.OpenReadStream().CopyToAsync(reader);
+
+            string base64Image = Convert.ToBase64String(reader.ToArray());
+
+            return $"""data:{image.ContentType};base64,{base64Image}""";
+        }
     }
 }

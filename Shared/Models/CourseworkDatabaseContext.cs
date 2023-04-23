@@ -87,6 +87,8 @@ public class PapersDbContext : DbContext
             @class.HasIndex(cl => cl.Id);
             @class.HasKey(cl => cl.Id);
 
+            @class.Property(cl => cl.Name);
+
             @class.HasOne(cl => cl.TeacherNavigation).WithMany(teacher => teacher.Classes).HasForeignKey(cl => cl.TeacherId);
             @class.HasMany(cl => cl.Students).WithMany(st => st.CurrentClasses);
         });
@@ -98,9 +100,10 @@ public class PapersDbContext : DbContext
 
             assignment.Property(a => a.Due);
             assignment.Property(a => a.Set);
+            assignment.Property(a => a.Name);
 
             assignment.HasMany(a => a.PaperResults).WithOne(p => p.Assignment).HasForeignKey(p => p.AssignmentId);
-            assignment.HasMany(a => a.Questions).WithOne(q => q.Assignment).HasForeignKey(q => q.AssignmentId);
+            assignment.HasMany(a => a.Questions).WithMany();
 
             assignment.HasOne(a => a.Student).WithMany(st => st.Assignments).HasForeignKey(a => a.StudentId);
         });
@@ -126,8 +129,6 @@ public class PapersDbContext : DbContext
 
             question.HasOne(q => q.Level).WithMany().IsRequired(false);
             question.HasOne(q => q.ExamBoard).WithMany().IsRequired(false);
-
-            question.HasOne(q => q.Assignment).WithMany(a => a.Questions).HasForeignKey(q => q.AssignmentId);
         });
 
         modelBuilder.Entity<ExamBoard>(SetUpFilterOptions);

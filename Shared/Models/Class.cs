@@ -8,6 +8,8 @@ public class Class : DbTable
 {
     public Guid TeacherId { get; set; }
 
+    public string Name { get; set; } = null!;
+
     public virtual Teacher TeacherNavigation { get; set; } = null!;
 
     public virtual ICollection<Student> Students { get; init; } = new List<Student>();

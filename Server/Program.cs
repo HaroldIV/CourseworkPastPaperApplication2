@@ -207,6 +207,12 @@ namespace CourseworkPastPaperApplication2
         /// This method is wasteful of memory. If bottlenecks arise, this should be refactored first. 
         private static async Task<IResult> ReadInImageFile([FromBody] Question questionBase, [FromServices] PapersDbContext db)
         {
+            if (questionBase.ExamBoard is not null)
+                db.ExamBoards.Attach(questionBase.ExamBoard);
+            if (questionBase.Level is not null)
+                db.Levels.Attach(questionBase.Level);
+            
+
             questionBase.ReadData = await ImageReader.ReadImageAsync(questionBase.Data); 
 
             await db.Questions.AddAsync(questionBase);
@@ -249,7 +255,7 @@ namespace CourseworkPastPaperApplication2
                 ).FirstOrDefaultAsync();
         }
 
-        private static async Task AddTeacherClass([FromRoute] Guid teacherId, [FromServices] PapersDbContext db, [FromBody] IEnumerable<Student> studentsToAdd)
+        private static async Task AddTeacherClass([FromRoute] Guid teacherId, [FromServices] PapersDbContext db, [FromBody] Class classBase)
         {
             Teacher? teacher = await db.Teachers.FindAsync(teacherId);
 
@@ -258,14 +264,7 @@ namespace CourseworkPastPaperApplication2
                 return;
             }
 
-            Class @class = new Class();
-
-            foreach (var student in studentsToAdd)
-            {
-                @class.Students.Add(student);
-            }
-
-            teacher.Classes.Add(@class);
+            teacher.Classes.Add(classBase);
 
             await db.SaveChangesAsync();
         }

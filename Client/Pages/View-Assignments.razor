@@ -1,0 +1,47 @@
+﻿@page "/view-assignments/{ClassId:guid}"
+@inject HttpClient Http
+@inject ILocalStorageService LocalStorage
+@inject NavigationManager NavManager
+
+
+<PageTitle>View Assignments</PageTitle>
+
+<button @onclick='() => NavManager.NavigateTo("/add-assignment")'>Add Assignment</button>
+
+@if (assignments is not null)
+{
+    @foreach (var (i, assignment) in assignments.WithIndex())
+    {
+        @assignment.Name
+
+        <button>View Assignment</button>
+        <button>View Class Results</button>
+
+        <br>
+    }
+}
+
+
+@code
+{
+    [Parameter]
+    public Guid ClassId { get; set; }
+
+    private List<Assignment> assignments { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        assignments = await Http.GetFromJsonAsync<List<Assignment>>($"https://localhost:7053/Class/{ClassId}/Assignments") ?? new List<Assignment>();
+
+        await base.OnInitializedAsync();
+    }
+
+    private async Task RemoveClass(Assignment assignment)
+    {
+        assignments.Remove(assignment);
+
+        StateHasChanged();
+
+        await Http.DeleteAsync($"/Assignment/{assignment.Id}");
+    }
+}

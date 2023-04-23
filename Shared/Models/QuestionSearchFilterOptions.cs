@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace CourseworkPastPaperApplication2.Shared
@@ -15,6 +16,11 @@ namespace CourseworkPastPaperApplication2.Shared
     {
         public short Id { get; set; }
         public string Name { get; set; } = string.Empty;
+
+        public override string ToString()
+        {
+            return JsonSerializer.Serialize(this);
+        }
     }
 
     [TypeConverter(typeof(FilterOptionConverter<ExamBoard>))]
@@ -22,6 +28,11 @@ namespace CourseworkPastPaperApplication2.Shared
     {
         public short Id { get; set; }
         public string Name { get; set; } = string.Empty;
+
+        public override string ToString()
+        {
+            return JsonSerializer.Serialize(this);
+        }
     }
 
     public interface IFilterOption
@@ -40,7 +51,7 @@ namespace CourseworkPastPaperApplication2.Shared
         public override object? ConvertFrom(ITypeDescriptorContext? context, CultureInfo? culture, object value)
         {
             /// May need to assign Id also, assuming not for now. 
-            return new T { Name = (string)value };
+            return JsonSerializer.Deserialize<T>((string)value);
         }
 
         public override object? ConvertTo(ITypeDescriptorContext? context, CultureInfo? culture, object? value, Type destinationType)
@@ -50,7 +61,7 @@ namespace CourseworkPastPaperApplication2.Shared
                 return value;
             }
 
-            return ((T)value).Name;
+            return JsonSerializer.Serialize(value);
         }
     }
 }

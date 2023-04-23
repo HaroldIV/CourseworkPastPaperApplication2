@@ -12,6 +12,8 @@
 {
     @foreach (var (i, _class) in classes.WithIndex())
     {
+        @_class.Name
+        <br>
         @foreach (var student in _class.Students)
         {
             <StudentDisplayCheck Student="student" IsChecked="IsStudentChecked(_class, student)" OnCheck="(isChecked, student) => Check(_class, student)"/>
@@ -20,6 +22,7 @@
         <button @onclick="() => RemoveStudents(classes[i])">Remove Selected Students</button>
         <button @onclick="() => NavigateToAddStudentsToClass(classes[i])">Add Students to Class</button>
         <button @onclick="() => RemoveClass(classes[i])">Remove Class</button>
+        <button @onclick="() => NavigateToAssignments(classes[i])">View Assignments</button>
 
         <br>
     }
@@ -72,6 +75,11 @@
     private void NavigateToAddStudentsToClass(Class _class)
     {
         NavManager.NavigateTo($"/add-students-to-class/{_class.Id}");
+    }
+
+    private void NavigateToAssignments(Class _class)
+    {
+        NavManager.NavigateTo($"/view-assignments/{_class.Id}");
     }
 
     private async Task RemoveClass(Class @class)

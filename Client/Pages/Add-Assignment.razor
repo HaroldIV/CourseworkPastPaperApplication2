@@ -1,0 +1,36 @@
+﻿@page "/add-assignment/{ClassId:guid}"
+@inject HttpClient Http
+@using MyProject.Components;
+@inject ILocalStorageService LocalStorage
+
+<PageTitle>Add Assignments</PageTitle>
+
+<InputText @bind-Value="assignmentName"/>
+
+<button @onclick="AddNewClass">Add new Class</button>
+
+
+@code
+{
+    [Parameter]
+    public Guid ClassId { get; set; }
+
+    private string assignmentName { get; set; }
+
+    private async Task AddNewClass()
+    {
+        Assignment assignment = new Assignment 
+        { 
+            Name = assignmentName,
+            
+        }
+
+        var response = await Http.PostAsJsonAsync<Class>($"https://localhost:7053/Teacher/{(await teacher).Id}/Classes", _class);
+
+        addStudentsComponentReference.Students.Clear();
+
+        await addStudentsComponentReference.SearchForStudentsFunc();
+
+        StateHasChanged();
+    }
+}

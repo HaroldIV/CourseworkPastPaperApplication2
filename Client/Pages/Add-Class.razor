@@ -5,6 +5,7 @@
 
 <PageTitle>Add Class</PageTitle>
 
+<InputText @bind-Value="className"/>
 <AddStudents @ref="addStudentsComponentReference"/>
 
 <button @onclick="AddNewClass">Add new Class</button>
@@ -16,11 +17,15 @@
 
     private Func<Task> SearchForStudent { get; set; } = null!;
 
+    private string className { get; set; }
+
     private async Task AddNewClass()
     {
         ValueTask<Teacher> teacher = LocalStorage.GetItemAsync<Teacher>("user");
 
-        var response = await Http.PostAsJsonAsync<ISet<Student>>($"https://localhost:7053/Teacher/{(await teacher).Id}/Classes", addStudentsComponentReference.Students);
+        Class _class = new Class { Name = className, Students = addStudentsComponentReference.Students };
+
+        var response = await Http.PostAsJsonAsync<Class>($"https://localhost:7053/Teacher/{(await teacher).Id}/Classes", _class);
 
         addStudentsComponentReference.Students.Clear();
 
