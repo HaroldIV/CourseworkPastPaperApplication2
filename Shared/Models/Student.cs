@@ -15,8 +15,6 @@ public class Student : User
     {
     }
 
-    public virtual ICollection<Assignment> Assignments { get; } = new List<Assignment>();
-
     public virtual ICollection<PaperResult> PaperResults { get; } = new List<PaperResult>();
 
     [JsonIgnore]

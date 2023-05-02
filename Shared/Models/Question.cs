@@ -5,6 +5,10 @@ namespace CourseworkPastPaperApplication2.Shared;
 
 public class Question : DbTable
 {
+    public string FileName { get; set; } = null!;
+
+    public int Marks { get; set; }
+
     public byte[] Data { get; set; } = null!;
 
     public string ReadData { get; set; } = null!;

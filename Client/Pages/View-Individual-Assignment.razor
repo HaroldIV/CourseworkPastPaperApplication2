@@ -1,0 +1,46 @@
+﻿@page "/view-individual-assignment/{AssignmentId:guid}"
+@inject HttpClient Http
+@inject ILocalStorageService LocalStorage
+@inject NavigationManager NavManager
+
+<PageTitle>View Assignment Questions</PageTitle>
+
+@if (assignment is not null)
+{
+    <h2>@assignment.Name</h2>
+}
+
+<button @onclick='() => NavManager.NavigateTo("/add-assignment")'>Add Assignment</button>
+
+@if (assignment is not null)
+{
+    @foreach (Question question in assignment.Questions)
+    {
+        <hr>
+        @Path.GetFileNameWithoutExtension(question.FileName)
+        <img src="@question.ToDataUrl()"/>
+
+        <br>
+    }
+}
+
+
+@code
+{
+    [Parameter]
+    public Guid AssignmentId { get; set; }
+
+    private Assignment? assignment { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        assignment = await Http.GetFromJsonAsync<Assignment?>($"https://localhost:7053/Assignment/{AssignmentId}/With?questions=true");
+
+        if (assignment is null)
+        {
+            Console.WriteLine($"ERROR: Assignment with id {AssignmentId} not found");
+        }
+
+        await base.OnInitializedAsync();
+    }
+}

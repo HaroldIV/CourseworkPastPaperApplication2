@@ -1,13 +1,31 @@
 ﻿@page "/add-assignment/{ClassId:guid}"
 @inject HttpClient Http
-@using MyProject.Components;
+@using MyProject.Components
+@using OneOf
+@using OneOf.Types
 @inject ILocalStorageService LocalStorage
 
 <PageTitle>Add Assignments</PageTitle>
 
-<InputText @bind-Value="assignmentName"/>
+<InputText @bind-Value="assignmentName" placeholder="Assignment Name"/>
+<br/>
 
-<button @onclick="AddNewClass">Add new Class</button>
+Due: <InputDate TValue="DateOnly" @bind-Value="due" min="@minimumDateForSetAndDue"/>
+<br/>
+@errorMessage
+<br/>
+<SearchForQuestion OnQuestionSelected="HandleQuestionSelected"/>
+<br/>
+
+@foreach (var question in questions)
+{
+    @Path.GetFileNameWithoutExtension(question.FileName) <button @onclick="() => { questions.Remove(question); StateHasChanged(); }">Remove Image</button>
+    <br>
+}
+
+<br/>
+
+<button @onclick="AddNewAssignment">Add new Assignment</button>
 
 
 @code
@@ -15,22 +33,47 @@
     [Parameter]
     public Guid ClassId { get; set; }
 
-    private string assignmentName { get; set; }
+    private readonly string minimumDateForSetAndDue = DateOnly.FromDateTime(DateTime.Now).ToString("yyyy-MM-dd");
 
-    private async Task AddNewClass()
+    private HashSet<Question> questions { get; set; } = new HashSet<Question>();
+
+    private string errorMessage = string.Empty;
+
+    private string assignmentName { get; set; } = string.Empty;
+
+    private DateOnly due { get; set; } = DateOnly.FromDateTime(DateTime.Now);
+
+    private void HandleQuestionSelected(Question question)
     {
-        Assignment assignment = new Assignment 
-        { 
-            Name = assignmentName,
-            
+        questions.Add(question);
+    }
+
+    private async Task<OneOf<Success, Error>> AddNewAssignment()
+    {
+        var today = DateOnly.FromDateTime(DateTime.Now);
+
+        if (due.CompareTo(today) == -1)
+        {
+            errorMessage = "Cannot be due before today";
+
+            StateHasChanged();
+
+            return new Error();
         }
 
-        var response = await Http.PostAsJsonAsync<Class>($"https://localhost:7053/Teacher/{(await teacher).Id}/Classes", _class);
+        Assignment assignment = new Assignment
+        {
+            Name = assignmentName,
+            Due = due,
+            Set = today
+        };
 
-        addStudentsComponentReference.Students.Clear();
+        questions.ForEach(assignment.Questions.Add);
 
-        await addStudentsComponentReference.SearchForStudentsFunc();
+        await Http.PostAsJsonAsync<Assignment>($"https://localhost:7053/Class/{ClassId}/Assignments", assignment);
 
         StateHasChanged();
+
+        return new Success();
     }
 }

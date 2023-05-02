@@ -6,7 +6,7 @@
 
 <PageTitle>View Assignments</PageTitle>
 
-<button @onclick='() => NavManager.NavigateTo("/add-assignment")'>Add Assignment</button>
+<button @onclick='() => NavManager.NavigateTo($"/add-assignment/{ClassId}")'>Add Assignment</button>
 
 @if (assignments is not null)
 {
@@ -14,8 +14,8 @@
     {
         @assignment.Name
 
-        <button>View Assignment</button>
-        <button>View Class Results</button>
+        <button @onclick="() => NavigateToViewIndividualAssignment(assignment)">View Assignment Questions</button>
+        <button @onclick="() => NavigateToClassResultsForAssignment(assignment)">View Class Results</button>
 
         <br>
     }
@@ -27,7 +27,7 @@
     [Parameter]
     public Guid ClassId { get; set; }
 
-    private List<Assignment> assignments { get; set; }
+    private List<Assignment>? assignments { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -36,8 +36,23 @@
         await base.OnInitializedAsync();
     }
 
-    private async Task RemoveClass(Assignment assignment)
+    private void NavigateToViewIndividualAssignment(Assignment assignment)
     {
+        NavManager.NavigateTo($"/view-individual-assignment/{assignment.Id}");
+    }
+
+    private void NavigateToClassResultsForAssignment(Assignment assignment)
+    {
+        NavManager.NavigateTo($"/class-results/{assignment.Id}");
+    }
+
+    private async Task RemoveAssignment(Assignment assignment)
+    {
+        if (assignments is null)
+        {
+            return;
+        }
+
         assignments.Remove(assignment);
 
         StateHasChanged();

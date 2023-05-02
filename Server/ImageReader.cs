@@ -2,6 +2,7 @@
 using System.IO;
 using Tesseract;
 using System.Threading.Tasks;
+using System;
 
 namespace CourseworkPastPaperApplication2.Server
 {
@@ -9,6 +10,7 @@ namespace CourseworkPastPaperApplication2.Server
     public class ImageReader
     {
         private static readonly TesseractEngine ocr;
+        private static bool isProcessing;
 
         static ImageReader()
         {
@@ -16,13 +18,24 @@ namespace CourseworkPastPaperApplication2.Server
             ocr = new TesseractEngine(dataPath, "eng", EngineMode.Default);
         }
 
-        public static string ReadImage(byte[] imageBytes)
+        public static async Task<string> ReadImage(byte[] imageBytes)
         {
             using Pix image = Pix.LoadFromMemory(imageBytes);
+         
+            while (isProcessing)
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(500));
+            }
+
+            isProcessing = true;
+            string returnValue;
+            using (Page page = ocr.Process(image))
+            {
+                returnValue = page.GetText();
+            }
             
-            using Page page = ocr.Process(image);
-            
-            return page.GetText();
+            isProcessing = false;
+            return returnValue;
         }
 
         public static async Task<string> ReadImageAsync(byte[] imageBytes)

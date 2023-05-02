@@ -1,25 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace CourseworkPastPaperApplication2.Shared;
 
 public class Assignment : DbTable
 {
-    public DateTime Set { get; set; }
+    public DateOnly Set { get; set; }
 
-    public DateTime Due { get; set; }
+    public DateOnly Due { get; set; }
 
     public string Name { get; set; } = null!;
 
-    public Guid? StudentId
-    {
-        get => Student!.Id;
-        set => Student!.Id = value ?? default;
-    }
+    [JsonInclude]
+    public int TotalMarks => Questions.Sum(question => question.Marks);
 
     public virtual ICollection<PaperResult> PaperResults { get; } = new List<PaperResult>();
 
     public virtual ICollection<Question> Questions { get; } = new List<Question>();
 
-    public virtual Student? Student { get; set; }
+    public virtual Class Class { get; set; } = null!;
 }

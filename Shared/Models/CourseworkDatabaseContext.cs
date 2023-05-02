@@ -65,7 +65,6 @@ public class PapersDbContext : DbContext
             student.Ignore(st => st.PasswordAsHex);
 
             student.HasMany(st => st.CurrentClasses).WithMany(@class => @class.Students);
-            student.HasMany(st => st.Assignments).WithOne(a => a.Student).HasForeignKey(a => a.StudentId);
             student.HasMany(st => st.PaperResults).WithOne(p => p.Student).HasForeignKey(p => p.StudentId);
         });
 
@@ -91,6 +90,8 @@ public class PapersDbContext : DbContext
 
             @class.HasOne(cl => cl.TeacherNavigation).WithMany(teacher => teacher.Classes).HasForeignKey(cl => cl.TeacherId);
             @class.HasMany(cl => cl.Students).WithMany(st => st.CurrentClasses);
+
+            @class.HasMany(cl => cl.Assignments).WithOne(a => a.Class);
         });
 
         modelBuilder.Entity<Assignment>(assignment =>
@@ -105,7 +106,7 @@ public class PapersDbContext : DbContext
             assignment.HasMany(a => a.PaperResults).WithOne(p => p.Assignment).HasForeignKey(p => p.AssignmentId);
             assignment.HasMany(a => a.Questions).WithMany();
 
-            assignment.HasOne(a => a.Student).WithMany(st => st.Assignments).HasForeignKey(a => a.StudentId);
+            assignment.HasOne(a => a.Class).WithMany(cl => cl.Assignments);
         });
 
         modelBuilder.Entity<PaperResult>(paperResult =>
@@ -126,6 +127,8 @@ public class PapersDbContext : DbContext
 
             question.Property(q => q.Data);
             question.Property(q => q.ReadData);
+            question.Property(q => q.FileName);
+            question.Property(q => q.Marks);
 
             question.HasOne(q => q.Level).WithMany().IsRequired(false);
             question.HasOne(q => q.ExamBoard).WithMany().IsRequired(false);

@@ -3,6 +3,10 @@
 
 <PageTitle>Upload Papers</PageTitle>
 
+Marks: <InputNumber TValue="int" @bind-Value="marks" Step="1"/>, @marks
+
+<br>
+
 <InputFile accept="image/*" OnChange="HandleFileChange"/>
 
 <br>
@@ -43,6 +47,7 @@
     private Level? level { get; set; }
     private ExamBoard? examBoard { get; set; }
     private string? url { get; set; }
+    private int marks { get; set; } = 1;
 
     IBrowserFile? image;
     byte[]? imageData; 
@@ -81,7 +86,14 @@
             return;
         }
 
-        Question question = new Question { Data = imageData ?? throw new ArgumentNullException($"{nameof(imageData)} was null"), ExamBoard = examBoard, Level = level };
+        Question question = new Question
+        {
+            FileName = image.Name,
+            Data = imageData ?? throw new ArgumentNullException($"{nameof(imageData)} was null"), 
+            ExamBoard = examBoard, 
+            Level = level,
+            Marks = marks
+        };
 
         var response = await Http.PostAsJsonAsync<Question>("https://localhost:7053/Image", question);
 

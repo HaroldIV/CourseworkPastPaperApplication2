@@ -60,24 +60,24 @@ namespace CourseworkPastPaperApplication2.Shared.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<DateTime>("Due")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<Guid>("ClassId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly>("Due")
+                        .HasColumnType("date");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<DateTime>("Set")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("StudentId")
-                        .HasColumnType("uuid");
+                    b.Property<DateOnly>("Set")
+                        .HasColumnType("date");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Id");
+                    b.HasIndex("ClassId");
 
-                    b.HasIndex("StudentId");
+                    b.HasIndex("Id");
 
                     b.ToTable("Assignments", "public");
                 });
@@ -155,6 +155,7 @@ namespace CourseworkPastPaperApplication2.Shared.Migrations
                         .HasColumnType("integer");
 
                     b.Property<Guid?>("StudentId")
+                        .IsRequired()
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
@@ -181,8 +182,15 @@ namespace CourseworkPastPaperApplication2.Shared.Migrations
                     b.Property<short?>("ExamBoardId")
                         .HasColumnType("smallint");
 
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<short?>("LevelId")
                         .HasColumnType("smallint");
+
+                    b.Property<int>("Marks")
+                        .HasColumnType("integer");
 
                     b.Property<string>("ReadData")
                         .IsRequired()
@@ -273,11 +281,13 @@ namespace CourseworkPastPaperApplication2.Shared.Migrations
 
             modelBuilder.Entity("CourseworkPastPaperApplication2.Shared.Assignment", b =>
                 {
-                    b.HasOne("CourseworkPastPaperApplication2.Shared.Student", "Student")
+                    b.HasOne("CourseworkPastPaperApplication2.Shared.Class", "Class")
                         .WithMany("Assignments")
-                        .HasForeignKey("StudentId");
+                        .HasForeignKey("ClassId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
-                    b.Navigation("Student");
+                    b.Navigation("Class");
                 });
 
             modelBuilder.Entity("CourseworkPastPaperApplication2.Shared.Class", b =>
@@ -301,7 +311,9 @@ namespace CourseworkPastPaperApplication2.Shared.Migrations
 
                     b.HasOne("CourseworkPastPaperApplication2.Shared.Student", "Student")
                         .WithMany("PaperResults")
-                        .HasForeignKey("StudentId");
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Assignment");
 
@@ -328,10 +340,13 @@ namespace CourseworkPastPaperApplication2.Shared.Migrations
                     b.Navigation("PaperResults");
                 });
 
-            modelBuilder.Entity("CourseworkPastPaperApplication2.Shared.Student", b =>
+            modelBuilder.Entity("CourseworkPastPaperApplication2.Shared.Class", b =>
                 {
                     b.Navigation("Assignments");
+                });
 
+            modelBuilder.Entity("CourseworkPastPaperApplication2.Shared.Student", b =>
+                {
                     b.Navigation("PaperResults");
                 });
 

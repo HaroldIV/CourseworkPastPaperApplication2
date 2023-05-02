@@ -1,0 +1,136 @@
+﻿@inject HttpClient Http
+
+<InputText placeholder="Keyword to search for" @bind-Value="keyword"/>
+<button @onclick="AddKeyword">Add Keyword</button>
+
+<h3>Keywords</h3>
+<ul>
+    @foreach (string keyword in questionSearchModel.KeywordsList)
+    {
+        @keyword
+        <button @onclick="() => { questionSearchModel.KeywordsList.Remove(keyword); StateHasChanged(); }">Remove Keyword</button>
+    }
+</ul>
+
+@if (options is not null)
+{
+    @foreach (var level in options.Levels)
+    {
+        <input type="checkbox" @onchange="e => HandleBoxCheck<Level>(e, level, levels)"/> @level.Name
+    }
+    <br>
+    <hr>
+    @foreach (var examBoard in options.ExamBoards)
+    {
+        <input type="checkbox" @onchange="e => HandleBoxCheck<ExamBoard>(e, examBoard, examBoards)" /> @examBoard.Name
+    }
+}
+
+🗸:  Search for matches on all keywords <br>
+x:  Get most matches possible
+<InputCheckbox @bind-Value="all"/>
+
+<button @onclick="SearchForMatchingQuestion">Search for Questions</button>
+
+@if (questions is not null && questions.Any())
+{
+    <button @onclick="() => ClearQuestions(questions)">Clear</button>
+    <br>
+
+    @foreach (Question question in questions)
+    {
+        <img src="@question.ToDataUrl()"/>
+        <button @onclick="() => HandleQuestionSelected(questions, question)">Select this Question</button>
+    }
+}
+
+@code
+{
+    [Parameter]
+    public EventCallback<Question> OnQuestionSelected { get; set; }
+
+    private bool all 
+    { 
+        get => questionSearchModel.All; 
+        set => questionSearchModel.All = value; 
+    }
+
+    /// Render questions and provide some kind of event or function that triggers when one is selected, allowing it to be accessed from outside the component
+    private HashSet<Question>? questions { get; set; }
+
+    private HashSet<Level> levels { get; set; } = new HashSet<Level>();
+    private HashSet<ExamBoard> examBoards { get; set; } = new HashSet<ExamBoard>();
+
+    private QuestionSearchModel questionSearchModel = new QuestionSearchModel { KeywordsList = new List<string>() };
+    private string keyword { get; set; } = string.Empty;
+
+    private RadioOptions? options { get; set; }
+
+    private void ClearQuestions(HashSet<Question> questions)
+    {
+        questions.Clear();
+
+        StateHasChanged();
+    }
+
+    private async Task HandleQuestionSelected(HashSet<Question> questions, Question question)
+    {
+        questions.Remove(question);
+
+        StateHasChanged();
+
+        await OnQuestionSelected.InvokeAsync(question);
+    }
+
+    private async Task SearchForMatchingQuestion()
+    {
+        var response = await Http.PostAsJsonAsync("https://localhost:7053/Question", questionSearchModel);
+
+        Console.WriteLine(await response.Content.ReadAsStringAsync());
+
+        questions = await response.Content.ReadFromJsonAsync<HashSet<Question>>();
+
+        StateHasChanged();
+    }
+
+    private void HandleBoxCheck<T>(ChangeEventArgs e, T item, ICollection<T> values)
+    {
+        if (e.Value is null)
+        {
+            return;
+        }
+
+        if ((bool)e.Value)
+        {
+            values.Add(item);
+
+            return;
+        }
+
+        values.Remove(item);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        options = await Http.GetFromJsonAsync<RadioOptions>("https://localhost:7053/Options") ?? new RadioOptions(ExamBoards: Array.Empty<ExamBoard>(), Levels: Array.Empty<Level>());
+
+        questionSearchModel.ExamBoards = examBoards;
+        questionSearchModel.ValidLevels = levels;
+
+        await base.OnInitializedAsync();
+    }
+
+    private void AddKeyword()
+    {
+        if (string.IsNullOrWhiteSpace(keyword))
+        {
+            return;
+        }
+
+        questionSearchModel.KeywordsList.Add(keyword);
+
+        keyword = string.Empty;
+
+        StateHasChanged();
+    }
+}

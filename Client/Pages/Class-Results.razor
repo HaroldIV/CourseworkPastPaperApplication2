@@ -1,0 +1,40 @@
+﻿@page "/class-results/{AssignmentId:guid}"
+@inject HttpClient Http
+@inject ILocalStorageService LocalStorage
+@inject NavigationManager NavManager
+
+<PageTitle>View Class Results</PageTitle>
+
+<button @onclick='() => NavManager.NavigateTo("/add-assignment")'>Add Assignment</button>
+
+@if (assignment is not null)
+{
+    @foreach (PaperResult paperResult in assignment.PaperResults)
+    {
+        <hr>
+        @paperResult.Student.Name<br>
+        @($"{paperResult.Score}/{assignment.TotalMarks}")
+        <br>
+    }
+}
+
+
+@code
+{
+    [Parameter]
+    public Guid AssignmentId { get; set; }
+
+    private Assignment? assignment { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        assignment = await Http.GetFromJsonAsync<Assignment?>($"https://localhost:7053/Assignment/{AssignmentId}/With?questions=true&paperResults=true");
+
+        if (assignment is null)
+        {
+            Console.WriteLine($"ERROR: Assignment with id {AssignmentId} not found");
+        }
+
+        await base.OnInitializedAsync();
+    }
+}

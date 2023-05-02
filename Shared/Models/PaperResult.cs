@@ -13,5 +13,5 @@ public class PaperResult : DbTable
 
     public virtual Assignment Assignment { get; set; } = null!;
 
-    public virtual Student? Student { get; set; }
+    public virtual Student Student { get; set; } = null!;
 }

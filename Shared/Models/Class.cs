@@ -13,4 +13,6 @@ public class Class : DbTable
     public virtual Teacher TeacherNavigation { get; set; } = null!;
 
     public virtual ICollection<Student> Students { get; init; } = new List<Student>();
+
+    public virtual ICollection<Assignment> Assignments { get; init; } = new List<Assignment>();
 }
