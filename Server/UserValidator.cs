@@ -7,10 +7,11 @@ namespace CourseworkPastPaperApplication2.Server
 {
     public class UserValidator : AbstractValidator<UserWithUnencryptedPassword>
     {
-        private IReadOnlySet<char> validPasswordChars { get; } = ValidCharsHashSetSingleton.GetInstance();
-
+        private IReadOnlySet<char> validPasswordChars { get; init; }
         public UserValidator()
         {
+            validPasswordChars = ValidCharsHashSetSingleton.GetInstance();
+
             const int UsernameMinimumLength = 6;
             const int UsernameMaximumLength = 48;
             RuleFor(user => user.Name).NotNull()

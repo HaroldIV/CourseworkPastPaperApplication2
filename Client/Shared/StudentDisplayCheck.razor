@@ -4,7 +4,8 @@
 @namespace MyProject.Components
 
 <div class="rectangle">
-    <SfCheckBox Label="@Student.Name" @bind-Checked="IsChecked" ValueChange="(ChangeEventArgs<bool> e) => HandleCheck(e.Checked)"/>
+    @*<SfCheckBox Label="@Student.Name" @bind-Checked="IsChecked" ValueChange="(ChangeEventArgs<bool> e) => HandleCheck(e.Checked)"/>*@
+        <Checkbox Label="@Student.Name" @bind-Checked="IsChecked" ValueChanged="HandleCheck"/>
 </div>
 
 @code {
@@ -20,5 +21,6 @@
     private void HandleCheck(bool isChecked)
     {
         OnCheck?.Invoke(isChecked, Student);
+        StateHasChanged();
     }
 }
