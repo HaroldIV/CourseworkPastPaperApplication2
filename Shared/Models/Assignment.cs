@@ -15,9 +15,11 @@ public class Assignment : DbTable
     [JsonInclude]
     public int TotalMarks => Questions.Sum(question => question.Marks);
 
-    public virtual ICollection<PaperResult> PaperResults { get; } = new List<PaperResult>();
+    public virtual ICollection<PaperResult> PaperResults { get; set; } = new List<PaperResult>();
 
-    public virtual ICollection<Question> Questions { get; } = new List<Question>();
+    [JsonInclude]
+    public virtual ICollection<Question> Questions { get; set; } = new List<Question>();
 
+    [JsonIgnore]
     public virtual Class Class { get; set; } = null!;
 }

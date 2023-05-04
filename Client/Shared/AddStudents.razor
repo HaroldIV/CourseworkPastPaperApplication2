@@ -20,19 +20,22 @@
 
 @foreach (Student student in Students)
 {
-    <StudentDisplayCheck Student="student" IsChecked="@IsStudentChecked(student)" OnCheck="(isChecked, student) => UpdateStudentCheckedStatus(isChecked, student)"/>
+    <label>
+        @student.Name
+        <button @onclick="() => HandleRemoveStudent(student)">Remove</button>
+    </label>
 }
 
 <hr>
-
-<p>@Students.Count</p>
-<p>@searchResults.Count</p>
 
 <h3>Search Results</h3>
 
 @foreach (Student student in searchResults)
 {
-    <StudentDisplayCheck Student="student" IsChecked="@IsStudentChecked(student)" OnCheck="(isChecked, student) => UpdateStudentCheckedStatus(isChecked, student)"/>
+    <label>
+        @student.Name
+        <button @onclick="() => HandleAddStudent(student)">Add</button>
+    </label>
 }
 
 @code
@@ -46,8 +49,6 @@
     private string username = string.Empty;
 
     private ISet<Student> searchResults = new HashSet<Student>();
-
-    private Dictionary<Student, bool> checkedStatuses = new Dictionary<Student, bool>();
 
     protected override void OnInitialized()
     {
@@ -67,36 +68,21 @@
 
         searchResults.ExceptWith(Students);
 
-        foreach (var searchResult in searchResults)
-        {
-            checkedStatuses[searchResult] = false;
-        }
+        StateHasChanged();
+    }
+
+    private void HandleAddStudent(Student student)
+    {
+        Students.Add(student);
+
+        searchResults.Remove(student);
 
         StateHasChanged();
     }
 
-    private bool IsStudentChecked(Student student)
+    private void HandleRemoveStudent(Student student)
     {
-        return checkedStatuses.ContainsKey(student) && checkedStatuses[student];
-    }
-
-    private void UpdateStudentCheckedStatus(bool isChecked, Student student)
-    {
-        if (isChecked)
-        {
-            Students.Add(student);
-
-            checkedStatuses[student] = true;
-            searchResults.Remove(student);
-
-            StateHasChanged();
-
-            return; 
-        }
-
         Students.Remove(student);
-
-        checkedStatuses[student] = false;
 
         StateHasChanged();
     }

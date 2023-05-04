@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace CourseworkPastPaperApplication2.Shared;
 
@@ -11,6 +12,7 @@ public class PaperResult : DbTable
 
     public Guid? StudentId { get => Student!.Id; set => Student!.Id = value ?? default; }
 
+    [JsonIgnore]
     public virtual Assignment Assignment { get; set; } = null!;
 
     public virtual Student Student { get; set; } = null!;

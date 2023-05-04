@@ -60,6 +60,14 @@ namespace CourseworkPastPaperApplication2.Client
             }
         }
 
+        public static async Task ForEach<T>(this IEnumerable<T> values, Func<T, Task> action)
+        {
+            foreach (T value in values)
+            {
+                await action.Invoke(value);
+            }
+        }
+
         public static T GetOrAdd<T>(this ICollection<T> values, T value)
         {
             if (values.Contains(value))

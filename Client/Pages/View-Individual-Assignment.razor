@@ -10,8 +10,6 @@
     <h2>@assignment.Name</h2>
 }
 
-<button @onclick='() => NavManager.NavigateTo("/add-assignment")'>Add Assignment</button>
-
 @if (assignment is not null)
 {
     @foreach (Question question in assignment.Questions)

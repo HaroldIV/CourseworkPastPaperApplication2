@@ -8,6 +8,8 @@
 
 <button @onclick='() => NavManager.NavigateTo($"/add-assignment/{ClassId}")'>Add Assignment</button>
 
+<hr/>
+
 @if (assignments is not null)
 {
     @foreach (var (i, assignment) in assignments.WithIndex())
@@ -16,6 +18,7 @@
 
         <button @onclick="() => NavigateToViewIndividualAssignment(assignment)">View Assignment Questions</button>
         <button @onclick="() => NavigateToClassResultsForAssignment(assignment)">View Class Results</button>
+        <button @onclick="() => RemoveAssignment(assignment)">Remove</button>
 
         <br>
     }
