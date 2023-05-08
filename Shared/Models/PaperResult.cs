@@ -8,12 +8,16 @@ public class PaperResult : DbTable
 {
     public int Score { get; set; }
 
-    public Guid AssignmentId { get => Assignment.Id; set => Assignment.Id = value; }
+    public Guid AssignmentId { get; set; }
 
-    public Guid? StudentId { get => Student!.Id; set => Student!.Id = value ?? default; }
+    public Guid StudentId { get; set; }
+
+    public Guid QuestionId { get; set; }
 
     [JsonIgnore]
     public virtual Assignment Assignment { get; set; } = null!;
+
+    public virtual Question Question { get; set; } = null!;
 
     public virtual Student Student { get; set; } = null!;
 }

@@ -166,15 +166,15 @@ namespace CourseworkPastPaperApplication2
 
             app.MapGet("/Class/{classId:guid}/Assignments", GetClassAssignments);
 
+            app.MapGet("/Assignment/{assignmentId:guid}/Withh/", GetAssignmentWith);
+
             app.MapPost("/Class/{classId:guid}/Assignments", AddAssignmentToClass);
 
             app.MapGet("/Assignment/{assignmentId:guid}", GetAssignment);
 
-            app.MapGet("/Assignment/{assignmentId:guid}/PaperResults", GetAssignmentPaperResults);
-
-            app.MapGet("/Assignment/{assignmentId:guid}/With/", GetAssignmentWith);
-
             app.MapDelete("/Assignment/{assignmentId:guid}", RemoveAssignment);
+
+            app.MapGet("/Assignment/{assignmentId:guid}/Results", GetAssignmentResults);
 
 #if DEBUG
             app.MapGet("/Assignments", ([FromServices] PapersDbContext db) => db.Assignments.Include(x => x.Questions));
@@ -219,6 +219,52 @@ namespace CourseworkPastPaperApplication2
 #endif
         }
 
+        /// Need to make this better.
+        private static async Task<string[][]?> GetAssignmentResults([FromRoute] Guid assignmentId, [FromServices] PapersDbContext db)
+        {
+            var assignment = await db.Assignments
+                .Include(@assignment => @assignment.Questions)
+                .Include(@assignment => @assignment.Class.Students)
+                .ThenInclude(student => student.PaperResults)
+                .FirstOrDefaultAsync(a => a.Id == assignmentId);
+
+            if (assignment is null)
+            {
+                return null;
+            }
+
+            int rowCount = assignment.Questions.Count + 1;
+            int columnCount = assignment.Class.Students.Count + 1;
+            string[][] scoresTable = new string[rowCount][];
+
+            for (int i = 0; i < scoresTable.Length; i++)
+            {
+                scoresTable[i] = new string[columnCount]; 
+            }
+
+            foreach (var (i, student) in assignment.Class.Students.WithIndex())
+            {
+                scoresTable[0][i + 1] = student.Name;
+            }
+
+            foreach (var (i, question) in assignment.Questions.WithIndex())
+            {
+                scoresTable[i + 1][0] = question.FileName;
+            }
+
+
+
+            foreach (var (i, question) in assignment.Questions.WithIndex())
+            {
+                foreach (var (j, paperResult) in assignment.Class.Students.Select(student => student.PaperResults.First(result => result.QuestionId == question.Id)).WithIndex())
+                {
+                    scoresTable[i + 1][j + 1] = $"{paperResult.Score}/{question.Marks}";
+                }
+            }
+
+            return scoresTable;
+        }
+
         private static async Task RemoveAssignment([FromRoute] Guid AssignmentId, [FromServices] PapersDbContext db)
         {
             var assignment = new Assignment { Id = AssignmentId };
@@ -230,33 +276,24 @@ namespace CourseworkPastPaperApplication2
             await db.SaveChangesAsync();
         }
 
-        private static async Task<Assignment?> GetAssignmentWith([FromRoute] Guid assignmentId, [FromServices] PapersDbContext db, [FromQuery] bool questions = false, [FromQuery] bool paperResults = false)
-        {
-            IQueryable<Assignment> assignments = db.Assignments;
-
-            if (questions)
-                assignments = assignments.Include(assignment => assignment.Questions);
-            if (paperResults)
-                assignments = assignments.Include(assignment => assignment.PaperResults);
-
-            return await assignments.FirstOrDefaultAsync(assignment => assignment.Id == assignmentId);
-        }
-
-        private static async Task<IEnumerable<PaperResult>?> GetAssignmentPaperResults([FromRoute] Guid assignmentId, [FromServices] PapersDbContext db)
-        {
-            Assignment? assignment = await db.Assignments.Include(assignment => assignment.PaperResults).FirstOrDefaultAsync(assignment => assignment.Id == assignmentId);
-
-            return assignment?.PaperResults;
-        }
-
         private static async Task<Assignment?> GetAssignment([FromRoute] Guid assignmentId, [FromServices] PapersDbContext db)
         {
             return await db.Assignments.FindAsync(assignmentId);
         }
 
+        private static async Task<Assignment?> GetAssignmentWith([FromRoute] Guid assignmentId, [FromServices] PapersDbContext db, [FromQuery] bool questions = false)
+        {
+            IQueryable<Assignment> assignments = db.Assignments;
+
+            if (questions)
+                assignments = assignments.Include(assignment => assignment.Questions);
+
+            return await assignments.FirstOrDefaultAsync(assignment => assignment.Id == assignmentId);
+        }
+
         private static async Task AddAssignmentToClass([FromRoute] Guid classId, [FromBody] Assignment assignment, [FromServices] PapersDbContext db)
         {
-            Class? @class = await db.Classes.FindAsync(classId);
+            Class? @class = await db.Classes.Include(cl => cl.Students).FirstOrDefaultAsync(cl => cl.Id == classId);
 
             if (@class is null)
             {
@@ -264,6 +301,22 @@ namespace CourseworkPastPaperApplication2
             }
 
             await db.Assignments.AddAsync(assignment);
+
+            foreach (var student in @class.Students)
+            {
+                foreach (Question question in assignment.Questions)
+                {
+                    PaperResult blankPaperResult = new PaperResult 
+                    { 
+                        Assignment = assignment, 
+                        Question = question, 
+                        Student = student 
+                    };
+
+                    await db.PaperResults.AddAsync(blankPaperResult);
+                    student.PaperResults.Add(blankPaperResult);
+                }
+            }
 
             db.Questions.AttachRange(assignment.Questions);
 

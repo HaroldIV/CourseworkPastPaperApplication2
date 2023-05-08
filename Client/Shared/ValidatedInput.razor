@@ -1,0 +1,24 @@
+﻿<input @bind-value="Value" @oninput="HandleInput"/>
+
+@code {
+    [Parameter]
+    public Func<string, bool>? ValidatorPredicate { get; set; } = null!;
+
+    [Parameter]
+    public string Value { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> ValueChanged { get; set; }
+
+    private void HandleInput(ChangeEventArgs e)
+    {
+        string newValue = (string)e.Value!;
+
+        if ((ValidatorPredicate ?? (s => true)).Invoke(newValue))
+        {
+            Value = newValue;
+        }
+
+        StateHasChanged();
+    }
+}

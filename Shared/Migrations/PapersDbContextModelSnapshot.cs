@@ -151,11 +151,13 @@ namespace CourseworkPastPaperApplication2.Shared.Migrations
                     b.Property<Guid>("AssignmentId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid>("QuestionId")
+                        .HasColumnType("uuid");
+
                     b.Property<int>("Score")
                         .HasColumnType("integer");
 
-                    b.Property<Guid?>("StudentId")
-                        .IsRequired()
+                    b.Property<Guid>("StudentId")
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
@@ -163,6 +165,8 @@ namespace CourseworkPastPaperApplication2.Shared.Migrations
                     b.HasIndex("AssignmentId");
 
                     b.HasIndex("Id");
+
+                    b.HasIndex("QuestionId");
 
                     b.HasIndex("StudentId");
 
@@ -304,8 +308,14 @@ namespace CourseworkPastPaperApplication2.Shared.Migrations
             modelBuilder.Entity("CourseworkPastPaperApplication2.Shared.PaperResult", b =>
                 {
                     b.HasOne("CourseworkPastPaperApplication2.Shared.Assignment", "Assignment")
-                        .WithMany("PaperResults")
+                        .WithMany()
                         .HasForeignKey("AssignmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CourseworkPastPaperApplication2.Shared.Question", "Question")
+                        .WithMany()
+                        .HasForeignKey("QuestionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -316,6 +326,8 @@ namespace CourseworkPastPaperApplication2.Shared.Migrations
                         .IsRequired();
 
                     b.Navigation("Assignment");
+
+                    b.Navigation("Question");
 
                     b.Navigation("Student");
                 });
@@ -333,11 +345,6 @@ namespace CourseworkPastPaperApplication2.Shared.Migrations
                     b.Navigation("ExamBoard");
 
                     b.Navigation("Level");
-                });
-
-            modelBuilder.Entity("CourseworkPastPaperApplication2.Shared.Assignment", b =>
-                {
-                    b.Navigation("PaperResults");
                 });
 
             modelBuilder.Entity("CourseworkPastPaperApplication2.Shared.Class", b =>

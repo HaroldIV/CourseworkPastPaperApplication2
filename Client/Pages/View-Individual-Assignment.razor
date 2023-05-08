@@ -32,7 +32,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        assignment = await Http.GetFromJsonAsync<Assignment?>($"https://localhost:7053/Assignment/{AssignmentId}/With?questions=true");
+        assignment = await Http.GetFromJsonAsync<Assignment?>($"https://localhost:7053/Assignment/{AssignmentId}/Withh?questions=true");
 
         if (assignment is null)
         {

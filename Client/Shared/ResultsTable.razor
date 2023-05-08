@@ -1,0 +1,92 @@
+﻿@using System.Linq
+
+<table class="table-bordered">
+    <thead>
+        <tr>
+            @foreach (string studentName in Results.GetRow(0))
+            {
+                <th>@studentName</th>
+            }
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var (i, row) in Results.WithIndex(1))
+        {
+            <tr>
+                <td>@row.IndexedPartition(0, out IEnumerable<string> scores).First()</td>
+
+                @foreach (var (j, result) in (scores ?? Enumerable.Empty<string>()).WithIndex())
+                {
+                    <td>@result <ValidatedInput @bind-Value="editBoxValues[i][j + 1]" ValidatorPredicate="value => ValidateForInteger(value, result)"/></td>
+                }
+            </tr>
+        }
+    </tbody>
+</table>
+
+<button @onclick="SaveNewMarks">Save new marks</button>
+
+@code {
+    [Parameter] 
+    public string[][] Results { get; set; } = null!;
+
+    public string?[][] editBoxValues { get; set; } = null!;
+
+    private IEnumerable<string>? scores { get; set; }
+
+    protected override void OnInitialized()
+    {
+        editBoxValues = new string[Results.Length][];
+
+        for (int i = 0; i < Results.Length; i++)
+        {
+            editBoxValues[i] = new string?[Results[0].Length];
+        }
+
+        base.OnInitialized();
+    }
+
+    private bool ValidateForInteger(string value, string result)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return true;
+        }
+
+        bool isValidInteger = uint.TryParse(value, out uint valueAsUnsignedInteger);
+
+        if (!isValidInteger)
+        {
+            return false;
+        }
+
+        var resultAsSpan = result.AsSpan();
+
+        int slashIndex = resultAsSpan.IndexOf('/');
+
+        uint maxMarksForQuestion = uint.Parse(resultAsSpan.Slice(slashIndex + 1));
+
+        return valueAsUnsignedInteger <= maxMarksForQuestion;
+    }
+
+    private void SaveNewMarks()
+    {
+        editBoxValues.WithIndex(1).ForEach(rowWithIndex => rowWithIndex.Item2.WithIndex(1).ForEach(result => ReplaceIfNeeded(result.Item2, rowWithIndex.Item1, result.Item1)));
+    }
+
+    private void ReplaceIfNeeded(string? value, int i, int j)
+    {
+        var result = Results[i][j];
+
+        if (result is null)
+        {
+            return;
+        }
+
+        int slashIndex = result.IndexOf('/');
+
+        Results[i][j] = value + result.Substring(slashIndex);
+
+        editBoxValues[i][j] = null;
+    }
+}

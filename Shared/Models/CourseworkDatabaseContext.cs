@@ -103,7 +103,6 @@ public class PapersDbContext : DbContext
             assignment.Property(a => a.Set);
             assignment.Property(a => a.Name);
 
-            assignment.HasMany(a => a.PaperResults).WithOne(p => p.Assignment).HasForeignKey(p => p.AssignmentId);
             assignment.HasMany(a => a.Questions).WithMany();
 
             assignment.HasOne(a => a.Class).WithMany(cl => cl.Assignments);
@@ -117,7 +116,7 @@ public class PapersDbContext : DbContext
             paperResult.Property(p => p.Score);
 
             paperResult.HasOne(p => p.Student).WithMany(st => st.PaperResults).HasForeignKey(p => p.StudentId);
-            paperResult.HasOne(p => p.Assignment).WithMany(a => a.PaperResults).HasForeignKey(a => a.AssignmentId);
+            paperResult.HasOne(p => p.Assignment).WithMany().HasForeignKey(p => p.AssignmentId);
         });
 
         modelBuilder.Entity<Question>(question =>
