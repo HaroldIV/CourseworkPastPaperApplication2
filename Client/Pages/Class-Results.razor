@@ -2,12 +2,14 @@
 @inject HttpClient Http
 @inject ILocalStorageService LocalStorage
 @inject NavigationManager NavManager
+@using System.Text.Json
+@using System.Text.Json.Serialization
 
 <PageTitle>View Class Results</PageTitle>
 
 @if (results is not null)
 {
-    <ResultsTable Results="results"/>
+    <ResultsTableComponent Results="results" OnSaveChanges="SaveNewResults"/>
 }
 
 
@@ -16,17 +18,32 @@
     [Parameter]
     public Guid AssignmentId { get; set; }
 
-    private string[][]? results { get; set; }
+    private ResultsTable? results { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
-        results = await Http.GetFromJsonAsync<string[][]?>($"https://localhost:7053/Assignment/{AssignmentId}/Results");
+        JsonSerializerOptions jsonOptions = new JsonSerializerOptions
+        {
+            //Converters = { new ResultsTableJsonConverter() },
+            Converters = { new IgnorePropertyIfConverter<Question>(info => info.Name == "Data") },
+            PropertyNameCaseInsensitive = true,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        };
+
+        results = await Http.GetFromJsonAsync<NonEnumerableResultsTable>($"https://localhost:7053/Assignment/{AssignmentId}/Results");
+
+        results = (await Http.GetStringAsync($"https://localhost:7053/Assignment/{AssignmentId}/Results") ?? string.Empty).Deserialize<NonEnumerableResultsTable>();
 
         if (results is null)
         {
-            Console.WriteLine($"ERROR: Assignment with id {AssignmentId} not found");
+            Console.Error.WriteLine($"Assignment with id {AssignmentId} not found");
         }
 
         await base.OnInitializedAsync();
+    }
+
+    private async Task SaveNewResults(IEnumerable<PaperResult> paperResults)
+    {
+        await Http.PostAsJsonAsync<IEnumerable<PaperResult>>($"https://localhost:7053/PaperResult/Results", paperResults);
     }
 }

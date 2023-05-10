@@ -19,5 +19,6 @@ public class PaperResult : DbTable
 
     public virtual Question Question { get; set; } = null!;
 
+    [JsonIgnore]
     public virtual Student Student { get; set; } = null!;
 }

@@ -1,0 +1,112 @@
+﻿@using System.Linq
+@inject HttpClient Http
+
+<table class="table-bordered">
+    <thead>
+        <tr>
+            @foreach (string studentName in Results.GetRow(0))
+            {
+                <th>@studentName</th>
+            }
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var (i, row) in Results.WithIndex(1))
+        {
+            <tr>
+                <td>@row.IndexedPartition(0, out IEnumerable<string> scores).First()</td>
+
+                @foreach (var (j, result) in (scores ?? Enumerable.Empty<string>()).WithIndex())
+                {
+                    <td>@result <input @oninput="e => HandleInput(e, i, j + 1)"/></td>
+                }
+            </tr>
+        }
+    </tbody>
+</table>
+
+<button @onclick="SaveNewMarks">Save new marks</button>
+
+@code {
+    [Parameter] 
+    public ResultsTable Results { get; set; } = null!;
+
+    [Parameter]
+    public EventCallback<IEnumerable<PaperResult>> OnSaveChanges { get; set; }
+
+    private uint[,] editBoxValues { get; set; } = null!;
+
+    private IEnumerable<string>? scores { get; set; }
+
+    protected override void OnInitialized()
+    {
+        editBoxValues = new uint[Results.Rows - 1, Results.Columns - 1];
+
+        base.OnInitialized();
+    }
+
+    private void HandleInput(ChangeEventArgs e, int i, int j)
+    {
+        string newValue = (string?)e.Value ?? string.Empty;
+
+        if (ValidateForNewResult(newValue, Results[i, j]))
+        {
+            ReplaceIfNeeded(newValue, i, j);
+
+            editBoxValues[i - 1, j - 1] = uint.Parse(newValue);
+        }
+    }
+
+    private bool ValidateForNewResult(string value, string result)
+    {
+        bool isValidInteger = uint.TryParse(value, out uint valueAsUnsignedInteger);
+
+        if (!isValidInteger)
+        {
+            return false;
+        }
+
+        var resultAsSpan = result.AsSpan();
+
+        int slashIndex = resultAsSpan.IndexOf('/');
+
+        uint maxMarksForQuestion = uint.Parse(resultAsSpan.Slice(slashIndex + 1));
+
+        return valueAsUnsignedInteger <= maxMarksForQuestion;
+    }
+
+    private async Task SaveNewMarks()
+    {
+        await OnSaveChanges.InvokeAsync(ResultsAsEnumerable());
+    }
+
+    private IEnumerable<PaperResult> ResultsAsEnumerable()
+    {
+        var res = Results; 
+
+        for (int i = 0; i < Results.Rows; i++)
+        {
+            for (int j = 0; j < Results.Columns; j++)
+            {
+                var student = Results.Students[j]; 
+
+                PaperResult oldResult = student.PaperResults.First(paperResult => paperResult.QuestionId == Results.Questions[i].Id);
+
+                oldResult.Score = (int)editBoxValues[i, j];
+
+                yield return oldResult;
+            }
+        }
+    }
+
+    private void ReplaceIfNeeded(string value, int i, int j)
+    {
+        string result = Results[i, j];
+
+        int slashIndex = result.IndexOf('/');
+
+        Results[i, j] = value + result.Substring(slashIndex);
+
+        StateHasChanged();
+    }
+}
