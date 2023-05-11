@@ -248,5 +248,7 @@ namespace CourseworkPastPaperApplication2.Shared
 
             return value;
         }
+
+        public static void AddRange<T>(this ICollection<T> values, IEnumerable<T> valuesToAdd) => valuesToAdd.ForEach(values.Add);
     }
 }

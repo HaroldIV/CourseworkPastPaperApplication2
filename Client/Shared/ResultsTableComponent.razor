@@ -84,9 +84,9 @@
     {
         var res = Results; 
 
-        for (int i = 0; i < Results.Rows; i++)
+        for (int i = 0; i < Results.Rows - 1; i++)
         {
-            for (int j = 0; j < Results.Columns; j++)
+            for (int j = 0; j < Results.Columns - 1; j++)
             {
                 var student = Results.Students[j]; 
 

@@ -4,6 +4,7 @@
 @inject NavigationManager NavManager
 @using System.Text.Json
 @using System.Text.Json.Serialization
+@using CourseworkPastPaperApplication2.Shared
 
 <PageTitle>View Class Results</PageTitle>
 
@@ -30,14 +31,47 @@
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         };
 
-        results = await Http.GetFromJsonAsync<NonEnumerableResultsTable>($"https://localhost:7053/Assignment/{AssignmentId}/Results");
+        //results = await Http.GetFromJsonAsync<NonEnumerableResultsTable>($"https://localhost:7053/Assignment/{AssignmentId}/Results");
 
-        results = (await Http.GetStringAsync($"https://localhost:7053/Assignment/{AssignmentId}/Results") ?? string.Empty).Deserialize<NonEnumerableResultsTable>();
+        //results = (await Http.GetStringAsync($"https://localhost:7053/Assignment/{AssignmentId}/Results") ?? string.Empty).Deserialize<NonEnumerableResultsTable>();
 
-        if (results is null)
+        //if (results is null)
+        //{
+        //    Console.Error.WriteLine($"Assignment with id {AssignmentId} not found");
+        //}
+
+        ResultsTableInitialisationComponents? resultsTableInitialisationComponents = await Http.GetFromJsonAsync<ResultsTableInitialisationComponents>($"https://localhost:7053/Assignment/{AssignmentId}/Results");
+
+        if (resultsTableInitialisationComponents is null)
         {
             Console.Error.WriteLine($"Assignment with id {AssignmentId} not found");
+
+            return;
         }
+
+        Question[] questions = resultsTableInitialisationComponents.Questions.ToArray();
+        Student[] students = resultsTableInitialisationComponents.Students.ToArray();
+
+        await students.ForEach(async student => student.PaperResults.AddRange((await Http.GetFromJsonAsync<IEnumerable<PaperResult>>($"/Assignment/{AssignmentId}/Student/{student.Id}/Result") ?? Enumerable.Empty<PaperResult>())));
+
+        int rowCount = questions.Length + 1;
+        int columnCount = students.Length;
+        string[][] scoresTable = new string[rowCount][];
+
+        for (int i = 0; i < scoresTable.Length; i++)
+        {
+            scoresTable[i] = new string[columnCount];
+        }
+
+        foreach (var (i, question) in questions.WithIndex())
+        {
+            foreach (var (j, paperResult) in students.Select(student => student.PaperResults.First(result => result.QuestionId == question.Id)).WithIndex())
+            {
+                scoresTable[i][j] = $"{paperResult.Score}/{question.Marks}";
+            }
+        }
+
+        results = new ResultsTable(scoresTable, questions, students);
 
         await base.OnInitializedAsync();
     }

@@ -188,6 +188,14 @@ namespace CourseworkPastPaperApplication2.Shared
         }
     }
 
+    public class ResultsTableInitialisationComponents
+    {
+        public Student[] Students { get; set; } = null!;
+        public Guid Id { get; set; }
+        public string Name { get; set; } = null!;
+        public Question[] Questions { get; set; } = null!;
+    }
+
     public class ResultsTableJsonConverter : JsonConverter<ResultsTable>
     {   
         private static readonly Dictionary<string, PropertyInfo> propertyNameToInfoDictionary;

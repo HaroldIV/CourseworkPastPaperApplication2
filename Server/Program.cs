@@ -183,7 +183,9 @@ namespace CourseworkPastPaperApplication2
 
             app.MapGet("/Assignment/{assignmentId:guid}/Results", GetAssignmentResults);
 
-            app.MapPost("/PaperResult/Result", UpdateResults);
+            app.MapPost("/PaperResult/Results", UpdateResults);
+
+            app.MapGet("/Assignment/{assignmentId}/Student/{studentId}/Result", GetPaperResultsForSpecificStudentAssignment);
 
 #if DEBUG
             app.MapGet("/Assignments", ([FromServices] PapersDbContext db) => db.Assignments.Include(x => x.Questions));
@@ -228,6 +230,11 @@ namespace CourseworkPastPaperApplication2
 #endif
         }
 
+        private static IEnumerable<PaperResult> GetPaperResultsForSpecificStudentAssignment([FromServices] PapersDbContext db, [FromRoute] Guid assignmentId, [FromRoute] Guid studentId)
+        {
+            return db.PaperResults.Where(paperResult => paperResult.AssignmentId == assignmentId).Where(paperResult => paperResult.StudentId == studentId);
+        }
+
         private static async Task<IResult> UpdateResults([FromServices] PapersDbContext db, [FromBody] PaperResult[] results)
         {
             try
@@ -247,13 +254,13 @@ namespace CourseworkPastPaperApplication2
         }
 
         /// Need to make this better.
-        private static async Task<NonEnumerableResultsTable?> GetAssignmentResults([FromRoute] Guid assignmentId, [FromServices] PapersDbContext db)
+        private static async Task<ResultsTableInitialisationComponents?> GetAssignmentResults([FromRoute] Guid assignmentId, [FromServices] PapersDbContext db)
         {
             var assignment = await db.Assignments
                 .Include(@assignment => @assignment.Questions)
                 .Include(@assignment => @assignment.Class.Students)
                 .ThenInclude(student => student.PaperResults)
-                .Select(assignment => new { assignment.Id, assignment.Class, Questions = assignment.Questions.Select(question => new Question { FileName = question.FileName, Id = question.Id, Marks = question.Marks }) })
+                .Select(assignment => new { assignment.Name, assignment.Id, assignment.Class, Questions = assignment.Questions.Select(question => new Question { FileName = question.FileName, Id = question.Id, Marks = question.Marks }) })
                 .FirstOrDefaultAsync(a => a.Id == assignmentId);
 
             if (assignment is null)
@@ -261,27 +268,29 @@ namespace CourseworkPastPaperApplication2
                 return null;
             }
 
-            Question[] questions = assignment.Questions.ToArray();
-            Student[] students = assignment.Class.Students.ToArray();
+            return new ResultsTableInitialisationComponents { Students = assignment.Class.Students.ToArray(), Id = assignment.Id, Name = assignment.Name, Questions = assignment.Questions.ToArray() };
 
-            int rowCount = questions.Length + 1;
-            int columnCount = students.Length;
-            string[][] scoresTable = new string[rowCount][];
+            //Question[] questions = assignment.Questions.ToArray();
+            //Student[] students = assignment.Class.Students.ToArray();
 
-            for (int i = 0; i < scoresTable.Length; i++)
-            {
-                scoresTable[i] = new string[columnCount]; 
-            }
+            //int rowCount = questions.Length + 1;
+            //int columnCount = students.Length;
+            //string[][] scoresTable = new string[rowCount][];
 
-            foreach (var (i, question) in questions.WithIndex())
-            {
-                foreach (var (j, paperResult) in students.Select(student => student.PaperResults.First(result => result.QuestionId == question.Id)).WithIndex())
-                {
-                    scoresTable[i][j] = $"{paperResult.Score}/{question.Marks}";
-                }
-            }
+            //for (int i = 0; i < scoresTable.Length; i++)
+            //{
+            //    scoresTable[i] = new string[columnCount]; 
+            //}
 
-            return new ResultsTable(scoresTable, questions, students);
+            //foreach (var (i, question) in questions.WithIndex())
+            //{
+            //    foreach (var (j, paperResult) in students.Select(student => student.PaperResults.First(result => result.QuestionId == question.Id)).WithIndex())
+            //    {
+            //        scoresTable[i][j] = $"{paperResult.Score}/{question.Marks}";
+            //    }
+            //}
+
+            //return new ResultsTable(scoresTable, questions, students);
         }
 
         private static async Task RemoveAssignment([FromRoute] Guid AssignmentId, [FromServices] PapersDbContext db)
