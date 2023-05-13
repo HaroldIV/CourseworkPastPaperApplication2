@@ -2,24 +2,36 @@
 @using Microsoft.AspNetCore.Components.Web
 @namespace MyProject.Components
 
+@*
+    Keeps track of a checkbox by binding its value to checked and when checked, calls the HandleChange function. 
+    Also renders a Label provided to the component. 
+*@
 <label>
     <input type="checkbox" @bind="@Checked" @oninput="HandleChange" />
     @Label
 </label>
 
-@code {
+@code 
+{
+    // Represents the label passed to the component to attach to the input. 
     [Parameter]
     public string Label { get; set; } = string.Empty;
 
+    // Represents the value of whether or not the checkbox has been checked. 
     [Parameter]
     public bool Checked { get; set; }
 
+    // This EventCallback is used by the Blazor framework to make bindings work (allows for syntax such as <Checkbox @bind-Checked="{variable}"/>).
     [Parameter]
     public EventCallback<bool> CheckedChanged { get; set; }
 
+    // This EventCallback represents the function to be performed when the value is changed. 
     [Parameter]
     public EventCallback<bool> ValueChanged { get; set; }
 
+    // This function handles the checking of the checkbox. 
+    // It first converts the event arguments to their boolean value, representing whether or not it was checked. 
+    // It then invokes the ValueChanged event callback then causes the page to rerender in case that is necessary. 
     private void HandleChange(ChangeEventArgs e)
     {
         Checked = (bool)e.Value!;

@@ -1,11 +1,15 @@
 ﻿@inherits LayoutComponentBase
+@*
+    Modified template file, used to contain a navigation side bar but that did not match with the needs of the client and so was removed. 
+    Injects a local storage service. 
+*@
 @inject ILocalStorageService LocalStorage
 
 <div class="page">
     <main>
+        @*Renders the username retrieved from local storage in the top bar. *@
         <div class="top-row px-4">
             <p class="navbar-text">@username</p>
-            <a href="https://docs.microsoft.com/aspnet/" target="_blank">About</a>
         </div>
 
         <article class="content px-4">
@@ -16,8 +20,10 @@
 
 @code
 {
+    // Stores the value of the username. 
     private string? username = null;
 
+    // Adds an event handler to the local storage service that checks if the user has been assigned to and retrieves its new username and updates it if so. 
     protected override async Task OnInitializedAsync()
     {
         LocalStorage.Changed += (sender, e) =>

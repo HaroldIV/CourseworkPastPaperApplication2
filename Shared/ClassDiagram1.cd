@@ -1,0 +1,176 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="CourseworkPastPaperApplication2.Shared.DbTable" Collapsed="true">
+    <Position X="9" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAAAAAAAAAAAgAAAAAAAAAAAAIAAAAAAAAAAAiA=</HashCode>
+      <FileName>Models\DbTable.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="CourseworkPastPaperApplication2.Shared.Assignment" Collapsed="true">
+    <Position X="6" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AIAAAAAAAAAABAAAAAIAAAQAAAQAAAAEAAAAAAAAAAA=</HashCode>
+      <FileName>Models\Assignment.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="CourseworkPastPaperApplication2.Shared.Class" Collapsed="true">
+    <Position X="7.5" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAIAAAAAAAAAAAAAAAAACAQAAAAAAAAAAAAAgAAAAAA=</HashCode>
+      <FileName>Models\Class.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="CourseworkPastPaperApplication2.Shared.ExamBoard" Collapsed="true">
+    <Position X="3.25" Y="5.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAAAAAAAAAAEAAAAAAQAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\QuestionSearchFilterOptions.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.137" />
+  </Class>
+  <Class Name="CourseworkPastPaperApplication2.Shared.Extensions" Collapsed="true">
+    <Position X="7.5" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>ABAASAIEAAAgAQAAAAAAACAAACBAAABwAAAAAAAEAAA=</HashCode>
+      <FileName>Extensions.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="CourseworkPastPaperApplication2.Shared.FilterOptionConverter&lt;T&gt;" Collapsed="true">
+    <Position X="4.75" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAgAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\QuestionSearchFilterOptions.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="CourseworkPastPaperApplication2.Shared.Level" Collapsed="true">
+    <Position X="5.25" Y="5.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAAAAAAAAAAEAAAAAAQAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\QuestionSearchFilterOptions.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="CourseworkPastPaperApplication2.Shared.NonEnumerableResultsTable" Collapsed="true">
+    <Position X="1" Y="5.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAIBAAAAAAAAAABACAAAAAAACAAAAAAFAAAAAAAAAAA=</HashCode>
+      <FileName>ResultsTable.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="CourseworkPastPaperApplication2.Shared.PaperResult" Collapsed="true">
+    <Position X="12" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAQAAgAAgAAAAAAQAAAAAAAAAEAAAAAAQCAAA=</HashCode>
+      <FileName>Models\PaperResult.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="CourseworkPastPaperApplication2.Shared.PapersDbContext" Collapsed="true">
+    <Position X="0.75" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>QAIAAIAAAQEBQAAAAAAAAAAAEAAAAAAFAAAAAgAQAAA=</HashCode>
+      <FileName>Models\CourseworkDatabaseContext.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="CourseworkPastPaperApplication2.Shared.Question" Collapsed="true">
+    <Position X="9" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAABAAAAAAAAAAAAAAAAABgBAAQAAABAAAA=</HashCode>
+      <FileName>Models\Question.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="CourseworkPastPaperApplication2.Shared.RadioOptions" Collapsed="true">
+    <Position X="6.25" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAABAAAAAAAAAAAAAAAAAAABAAAAAAAAAAA=</HashCode>
+      <FileName>Models\QuestionSearchFilterOptions.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="CourseworkPastPaperApplication2.Shared.ResultsTable" Collapsed="true">
+    <Position X="2" Y="4" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAIAAAAAABAAAFAACAAAAAAgCAAAAAAEAAAAAAgAAQA=</HashCode>
+      <FileName>ResultsTable.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="CourseworkPastPaperApplication2.Shared.ResultsTableInitialisationComponents" Collapsed="true">
+    <Position X="8.25" Y="1" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAIAAAAAAAAgAAAAAAAAAAQAAAAAAAAEAAAAAAAAAAA=</HashCode>
+      <FileName>ResultsTable.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="CourseworkPastPaperApplication2.Shared.ResultsTableJsonConverter" Collapsed="true">
+    <Position X="7.25" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAEAAAA=</HashCode>
+      <FileName>ResultsTable.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="CourseworkPastPaperApplication2.Shared.Student" Collapsed="true">
+    <Position X="11.25" Y="6.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAQAQAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\Student.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="CourseworkPastPaperApplication2.Shared.Teacher" Collapsed="true">
+    <Position X="9.75" Y="6.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\Teacher.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="CourseworkPastPaperApplication2.Shared.User" Collapsed="true">
+    <Position X="10.5" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AIAAAAAAAAQAAAAAAAAAAAQAAAAAAAACAAAAAAAAAAA=</HashCode>
+      <FileName>Models\User.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="CourseworkPastPaperApplication2.Shared.Checked&lt;T&gt;" Collapsed="true">
+    <Position X="0.5" Y="0.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAACAAAAAAAAAAAABAAAAAAAAAAAAgIAAAAAA=</HashCode>
+      <FileName>Checked.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="CourseworkPastPaperApplication2.Shared.IgnorePropertyIfConverter&lt;T&gt;" Collapsed="true">
+    <Position X="12.5" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAEAAAAAAAgAAAAAAAAAAAAAAEAAAA=</HashCode>
+      <FileName>ResultsTable.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Struct Name="CourseworkPastPaperApplication2.Shared.QuestionSearchModel" Collapsed="true">
+    <Position X="3" Y="0.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAABAAAAAAAAAAAAEAAAAAAAAoAAAAAAAAA=</HashCode>
+      <FileName>Models\QuestionSearchModel.cs</FileName>
+    </TypeIdentifier>
+  </Struct>
+  <Struct Name="CourseworkPastPaperApplication2.Shared.UserWithUnencryptedPassword" Collapsed="true">
+    <Position X="3" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAQAAAAAAAACAAAAAAAAAAA=</HashCode>
+      <FileName>Models\UserWithUnencryptedPassword.cs</FileName>
+    </TypeIdentifier>
+  </Struct>
+  <Interface Name="CourseworkPastPaperApplication2.Shared.IFilterOption" Collapsed="true">
+    <Position X="4.25" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\QuestionSearchFilterOptions.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="CourseworkPastPaperApplication2.Shared.IResultsTable" Collapsed="true">
+    <Position X="2.5" Y="2.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAIAAAAAAAAAAAAACAAAAAAACAAAAAAEAAAAAAAAAAA=</HashCode>
+      <FileName>ResultsTable.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>

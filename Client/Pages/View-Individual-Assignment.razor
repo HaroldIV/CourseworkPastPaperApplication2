@@ -1,21 +1,28 @@
-﻿@page "/view-individual-assignment/{AssignmentId:guid}"
+﻿@*
+    Page title, {AssignmentId:guid} indicates that the page should be provided with an ID for an assignment when initialised
+    Injects an HTTP client via dependency injection.
+    Also injects a local storage service that allows for the page to access local storage.
+    Also injects a navigation manager that can reroute the user.
+*@
+@page "/view-individual-assignment/{AssignmentId:guid}"
+@using System.IO;
 @inject HttpClient Http
 @inject ILocalStorageService LocalStorage
 @inject NavigationManager NavManager
 
 <PageTitle>View Assignment Questions</PageTitle>
 
+@*Ensures that assignment has been successfully retrieved before rendering the name and questions. *@
 @if (assignment is not null)
 {
     <h2>@assignment.Name</h2>
-}
 
-@if (assignment is not null)
-{
+    @*Renders each question as its name followed by the image representing it. *@
     @foreach (Question question in assignment.Questions)
     {
         <hr>
         @Path.GetFileNameWithoutExtension(question.FileName)
+        <br/>
         <img src="@question.ToDataUrl()"/>
 
         <br>
@@ -25,18 +32,22 @@
 
 @code
 {
+    @*ID parameter the page was provided with. *@
     [Parameter]
     public Guid AssignmentId { get; set; }
 
+    // Represents the assignment to be retrieved from the database. 
     private Assignment? assignment { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
+        // Retrieves the assignment from the database. 
         assignment = await Http.GetFromJsonAsync<Assignment?>($"https://localhost:7053/Assignment/{AssignmentId}/Withh?questions=true");
 
+        // Logs if the assignment was unsuccessfully retrieved from the database. 
         if (assignment is null)
         {
-            Console.WriteLine($"ERROR: Assignment with id {AssignmentId} not found");
+            Console.Error.WriteLine($"Assignment with id {AssignmentId} not found");
         }
 
         await base.OnInitializedAsync();

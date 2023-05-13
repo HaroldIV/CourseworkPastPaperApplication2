@@ -1,4 +1,10 @@
-﻿@page "/view-assignments/{ClassId:guid}"
+﻿@*
+    Page title, {ClassId:guid} indicates that the page should be provided with an ID for a class when initialised
+    Injects an HTTP client via dependency injection.
+    Also injects a local storage service.
+    Also injects a navigation manager to allow the page to navigate the user to other pages. 
+*@
+@page "/view-assignments/{ClassId:guid}"
 @inject HttpClient Http
 @inject ILocalStorageService LocalStorage
 @inject NavigationManager NavManager
@@ -6,12 +12,15 @@
 
 <PageTitle>View Assignments</PageTitle>
 
+@*Button that navigates the user to the add assignments page. *@
 <button @onclick='() => NavManager.NavigateTo($"/add-assignment/{ClassId}")'>Add Assignment</button>
 
 <hr/>
 
+@*Ensures that assignments has been successfully retrieved from the server before rendering. *@
 @if (assignments is not null)
 {
+    @*Renders each assignment with a button to view its questions, a button to view its results, and a button to remove the assignment*@
     @foreach (var (i, assignment) in assignments.WithIndex())
     {
         @assignment.Name
@@ -27,28 +36,34 @@
 
 @code
 {
+    @*ID parameter the page was provided with. *@
     [Parameter]
     public Guid ClassId { get; set; }
 
+    // The list of assignments the page retrieves from the server. 
     private List<Assignment>? assignments { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
+        // Retrieves the assignments from the server and deserialises them into a list. 
         assignments = await Http.GetFromJsonAsync<List<Assignment>>($"https://localhost:7053/Class/{ClassId}/Assignments") ?? new List<Assignment>();
 
         await base.OnInitializedAsync();
     }
 
+    // Navigates the user to the view-individual-assignment page which contains the questions, with the assignment ID to indicate what assignment is benig worked with. 
     private void NavigateToViewIndividualAssignment(Assignment assignment)
     {
         NavManager.NavigateTo($"/view-individual-assignment/{assignment.Id}");
     }
 
+    // Navigates the user to the class-results page which contains the results for each class for each assignment, with the assignment ID to indicate what assignment is being worked with. 
     private void NavigateToClassResultsForAssignment(Assignment assignment)
     {
         NavManager.NavigateTo($"/class-results/{assignment.Id}");
     }
 
+    // Ensures the assignment in question actually exists then first removes it from the list of assignments then rerenders then sends a delete request to the server to delete the assignment. 
     private async Task RemoveAssignment(Assignment assignment)
     {
         if (assignments is null)

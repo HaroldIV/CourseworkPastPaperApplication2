@@ -1,13 +1,15 @@
-﻿@using MyProject.Components
+﻿@*
+    Injects an HTTP client to allow the component to work with HTTP requests. 
+    Injects a local storage service to allow the component to work with the site's local storage. 
+*@
+@using MyProject.Components
 @inject HttpClient Http
 @inject ILocalStorageService LocalStorage
 
 @*
-    Issue: To use this component, must use a reference with @ref. 
-    Solution: Figure out how bindings work in reverse.
-    Steps: Posted question on Stackoverflow.
+    Creates an edit form with the model being the username. 
+    When submitting, will search for a student using the username. 
 *@
-
 <EditForm OnSubmit="@SearchForStudent" Model="username">
     <label>
         Student Username
@@ -18,6 +20,7 @@
 
 <h3>Class being made</h3>
 
+@*Loops through each student that has been added and renders them with a button that will remove that student. *@
 @foreach (Student student in Students)
 {
     <label>
@@ -30,6 +33,7 @@
 
 <h3>Search Results</h3>
 
+@*Iterates through the search results for students and renders each student with a button that will add the student from the search results to the set of students. *@
 @foreach (Student student in searchResults)
 {
     <label>
@@ -40,16 +44,22 @@
 
 @code
 {
+    // Represents the collection of students to be added. 
+    // Note this is a set and so duplicates cannot be added. 
     [Parameter]
     public ISet<Student> Students { get; set; } = new HashSet<Student>();
 
+    // Represents the function used to search for students. 
     [Parameter]
     public Func<Task> SearchForStudentsFunc { get; set; } = null!; 
 
+    // Represents the username of the student(s) being searched for. 
     private string username = string.Empty;
 
+    // Represents the set of search results. 
     private ISet<Student> searchResults = new HashSet<Student>();
 
+    // Initialises the SearchForStudentsFunc function. 
     protected override void OnInitialized()
     {
         SearchForStudentsFunc = SearchForStudent; 
@@ -57,20 +67,26 @@
         base.OnInitialized();
     }
 
+    // Function that searches for a student. 
     private async Task SearchForStudent()
     {
+        // Ensures there is content within the username. 
         if (string.IsNullOrWhiteSpace(username))
         {
             return; 
         }
 
+        // Retrieves the students that have a name similar to the username provided, either through the name containing the username (%{username}% wildcard comparison) or through the phonic representation (approximated by the soundex function) being equivalent for both. 
         searchResults = (await Http.GetFromJsonAsync<HashSet<Student>>($"https://localhost:7053/Student/SoundsLike/{username}") ?? new HashSet<Student>());
 
+        // Removes all search results that are already contained in the set of students to add via the set exception operation. 
         searchResults.ExceptWith(Students);
 
+        // Indicates to rerender the component. 
         StateHasChanged();
     }
 
+    // Adds a student to set of students to add and removes them from the search results then rerenders the component. 
     private void HandleAddStudent(Student student)
     {
         Students.Add(student);
@@ -80,6 +96,10 @@
         StateHasChanged();
     }
 
+    // Removes a student from the results. 
+    // Note that the student does not get readded to the search results. 
+    // This is intentional as there then would be no way of clearing the search results of additional values after a new search without researching. 
+    // E.g. If a search was performed an a student, "John", was added from a list of three other similar names, then a new search for students named "Jason" was performed and "John" was removed, "John" would be added to the set of "Jason"s which is undesired behaviour. 
     private void HandleRemoveStudent(Student student)
     {
         Students.Remove(student);

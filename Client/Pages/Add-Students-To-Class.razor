@@ -1,33 +1,41 @@
-﻿@page "/add-students-to-class/{ClassId:guid}"
+﻿@*
+    Page title, {ClassId:guid} indicates that the page should be provided with an ID for a class when initialised
+    Injects an HTTP client via dependency injection.
+    Also injects a navigation manager that can reroute the user. 
+*@
+@page "/add-students-to-class/{ClassId:guid}"
 @using MyProject.Components
 @inject HttpClient Http
 @inject NavigationManager NavManager
 
 <PageTitle>Add Students To Class</PageTitle>
 
+@*
+    Ensures the set of students that forms the class being made up is not null and renders the AddStudents component if it is not. 
+    The @ref indicates that a reference to the component should be stored in the addStudentsComponentReference variable, this allows for more manual control over the component without relying on bindings.
+*@
 @if (selectedClass is not null)
 {
     <AddStudents @ref="addStudentsComponentReference"/>
 }
 
+@*Adds a button that, when clicked, will call the AddStudentsToClass method and add selected students to the class. *@
 <button @onclick="AddStudentsToClass">Add Students to Class</button>
 
 @code
 {
-
+    @*ID parameter the page was provided with. *@
     [Parameter]
     public Guid ClassId { get; set; }
 
+    // 
     private ISet<Student> selectedClass = null!; 
 
     private AddStudents addStudentsComponentReference = null!;
 
     protected override async Task OnInitializedAsync()
     {
-        Console.WriteLine(await Http.GetStringAsync("https://localhost:7053/Teachers"));
-
-        Console.WriteLine(await Http.GetStringAsync($"https://localhost:7053/Class/{ClassId}/Students"));
-
+        // Gets all students in the class and deserialises them to a HashSet, ensuring no duplicates can exist within the set and so within the class. 
         selectedClass = await Http.GetFromJsonAsync<HashSet<Student>>($"https://localhost:7053/Classs/{ClassId}/Students") ?? Enumerable.Empty<Student>().ToHashSet();
 
         await base.OnInitializedAsync();
@@ -35,8 +43,10 @@
 
     private async Task AddStudentsToClass()
     {
-        var response = await Http.PutAsJsonAsync<IEnumerable<Student>>($"https://localhost:7053/Class/{ClassId}/Add", addStudentsComponentReference.Students.Except(selectedClass));
+        // Sends all students save for those already in the class to the server to be added to the class. 
+        var response = await Http.PostAsJsonAsync<IEnumerable<Student>>($"https://localhost:7053/Class/{ClassId}/Add", addStudentsComponentReference.Students.Except(selectedClass));
 
+        // Navigates back to the view-classes-assignments page. 
         NavManager.NavigateTo("/view-classes-assignments");
     }
 }

@@ -1,23 +1,31 @@
 ﻿@using Microsoft.AspNetCore.Components.Web
-@using Syncfusion.Blazor
-@using Syncfusion.Blazor.Buttons
 @namespace MyProject.Components
 
+@*
+    Uses the custom Checkbox component to access functionality not available with InputCheckbox. 
+    Sets the checkbox to have a label of the student's name. 
+    Binds the value to the IsChecked parameter. 
+    When the value is changed, invokes the HandleCheck function. 
+*@
 <div class="rectangle">
-    @*<SfCheckBox Label="@Student.Name" @bind-Checked="IsChecked" ValueChange="(ChangeEventArgs<bool> e) => HandleCheck(e.Checked)"/>*@
-        <Checkbox Label="@Student.Name" @bind-Checked="IsChecked" ValueChanged="HandleCheck"/>
+    <Checkbox Label="@Student.Name" @bind-Checked="IsChecked" ValueChanged="HandleCheck"/>
 </div>
 
-@code {
+@code 
+{
+    // Represents whether or not the checkbox is checked. 
     [Parameter]
     public bool IsChecked { get; set; }
 
+    // Represents the student this StudentDisplayCheck is representing. 
     [Parameter]
     public Student Student { get; set; } = null!;
 
+    // Subroutine provided from outside the component, invoked when the checkbox is checked. 
     [Parameter]
     public Action<bool, Student>? OnCheck { get; set; }
 
+    // Calls the OnCheck subroutine and rerenders the component. 
     private void HandleCheck(bool isChecked)
     {
         OnCheck?.Invoke(isChecked, Student);

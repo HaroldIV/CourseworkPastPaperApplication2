@@ -1,36 +1,57 @@
-﻿@page "/add-class"
+﻿@*
+    Injects an HTTP client via dependency injection.
+    Also injects a local storage service.
+*@
+@page "/add-class"
 @inject HttpClient Http
 @using MyProject.Components;
 @inject ILocalStorageService LocalStorage
 
 <PageTitle>Add Class</PageTitle>
 
+@*Text input component with its value binded to the className variable and a placeholder of `Class Name`*@
 <InputText @bind-Value="className" placeholder="Class Name"/>
+<br/>
+@*
+    Custom razor component used for collecting a set of distinct students, can be found in Client/Shared directory. 
+    The @ref indicates that a reference to the component should be stored in the addStudentsComponentReference variable, this allows for more manual control over the component without relying on bindings. 
+*@
 <AddStudents @ref="addStudentsComponentReference"/>
 
+@*A button that, when clicked, will call the AddNewClass method. *@
 <button @onclick="AddNewClass">Add new Class</button>
 
 
 @code
 {
+    // The reference to the AddStudents component. 
     private AddStudents addStudentsComponentReference = null!;
 
+    // Function used for actually searching for students. 
     private Func<Task> SearchForStudent { get; set; } = null!;
 
+    // Name of the class being created. 
     private string className { get; set; } = string.Empty;
 
+    // Function called when button to add class is clicked. 
     private async Task AddNewClass()
     {
+        // Instantiates a task of retrieving the user data from local storage. 
         ValueTask<Teacher> teacher = LocalStorage.GetItemAsync<Teacher>("user");
 
+        // Instantiates a new Class with the Students from the addStudentsComponentReference component and the provided class name. 
         Class _class = new Class { Name = className, Students = addStudentsComponentReference.Students };
 
-        var response = await Http.PostAsJsonAsync<Class>($"https://localhost:7053/Teacher/{(await teacher).Id}/Classes", _class);
+        // Awaits the completion of the task two lines above and uses the result to send an HTTP PUT to the server that should create the class and add it to the Teacher's classes. 
+        // Also gets the response in case that needs to be worked with in the future. 
+        var response = await Http.PutAsJsonAsync<Class>($"https://localhost:7053/Teacher/{(await teacher).Id}/Classes", _class);
 
+        // Clears the students and searches for a new set of students matching previous conditions. 
         addStudentsComponentReference.Students.Clear();
 
         await addStudentsComponentReference.SearchForStudentsFunc();
 
+        // Indicates for the page to rerender. 
         StateHasChanged();
     }
 }

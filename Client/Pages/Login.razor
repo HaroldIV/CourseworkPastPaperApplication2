@@ -1,12 +1,12 @@
 ﻿@page "/"
-@using System.Text.Json
-@inject NavigationManager NavManager
-@inject HttpClient Http
-@inject ILocalStorageService LocalStorage;
 
 <PageTitle>Login</PageTitle>
 
 <h1 style="font-family:'Cascadia Code'">Login</h1>
 
+@*
+    This uses two instances of a generic component that provide login forms. 
+    The first allows the teacher to login and the second allows the student to login. 
+*@
 <LoginComponent TUser="Teacher"/>
 <LoginComponent TUser="Student"/>

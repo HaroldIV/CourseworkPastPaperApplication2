@@ -1,36 +1,45 @@
-﻿@using System.Text.Json
+﻿@*
+    Injects an HTTP client to allow the component to handle HTTP operations. 
+    Injects a local storage service to allow the component to work with local storage. 
+    Injects a navigation manager to allow the component to redirect the user. 
+    Uses a type parameter which allows this component to work generically with multiple classes (Teacher and Student in this situation). 
+*@
+@using System.Text.Json
 @inject HttpClient Http
 @inject ILocalStorageService LocalStorage
 @inject NavigationManager NavManager
 @typeparam TUser
 
+@*Login title with the string representation of the type. *@
 <h1 style="font-family:'Cascadia Code'">Login @userType</h1>
 
+@*
+    This small code block contains the name identifiers. 
+    E.g. teacher-name, teacher-password for teacher. 
+    These are used for the text input boxes that follow. 
+*@
 @code
 {
     string nameId => $"{userType.ToLower()}-name";
     string passwordId => $"{userType.ToLower()}-password";
 }
 
+@*
+    Edit form for the user variable. 
+    When submitted, calls the HandleSubmit function. 
+    Form contains a username and a password. 
+*@
 <EditForm Model="user" OnSubmit="HandleSubmit">
     <InputText id="@nameId" placeholder="Full Name" @bind-Value="username" />
     <InputText id="@passwordId" placeholder="Password" type="password" @bind-Value="password" />
     <button type="submit">Login</button>
 </EditForm>
 
+@*Button to redirect to the sign-up page. *@
 <button @onclick="ToSignUp">Sign Up</button>
 
-Welcome back.
-
-@if (success is null)
-{
-    <p>Not yet.</p>
-}
-else if (success.Value)
-{
-    <p>Well done!</p>
-}
-else
+@*Checks if any errors are present and displays them if they are. These are validation errors found by the server validation methods. *@
+@if(errors.Any())
 {
     <ul>
         @foreach (string error in errors)
@@ -42,23 +51,33 @@ else
 
 @code
 {
+    // username and password used for binding to the form above. 
+    // Accessor functions simply link directly to the corresponding properties on the user instance. 
+    // Direct access is not supported by bindings and so this must be used. 
     private string username { get => user.Name; set => user.Name = value; }
     private string password { get => user.Password; set => user.Password = value; }
 
+    // Gets the string representation of the type passed. 
+    // E.g. "Teacher" for the Teacher class. 
     private string userType = typeof(TUser).Name;
 
-    private bool? success = null;
+    // User instance with unhashed (string form) password to use as a model for entering login details. 
     private UserWithUnencryptedPassword user = new UserWithUnencryptedPassword();
+    // List of all validation errors found. 
     private List<string> errors = new List<string>();
 
+    // Handles the submitting of a new login attempt. 
     private async Task HandleSubmit()
     {
+        // If in debug, provides sensitive logging information. 
 #if DEBUG
     Console.WriteLine($"Attempting to login user with name {user.Name}, password {user.Password}.");
 #endif
 
+        // Clears the errors whenever a new login attempt is submitted. 
         errors.Clear();
 
+        // None of the following conditions should be possible without the user tampering with the console so just outputting "UNEXPECTED ERROR". 
         if (user.Name is null)
         {
             errors.Add("UNEXPECTED ERROR");
@@ -68,12 +87,16 @@ else
             errors.Add("UNEXPECTED ERROR");
         }
 
+        // Requests from the server whether or not the user is valid. 
+        // HTTP Get does not allow for bodies so HTTP Post is used in its place. 
         var result = await Http.PostAsJsonAsync<UserWithUnencryptedPassword>($"https://localhost:7053/Validate{userType}", user);
 
+        // Checks whether or not the user is valid. 
+        // If valid, sets the "user" value in local storage. 
+        // Then navigates to the homepage for that specific type. 
+        // E.g. For teacher, navigates to teacher-homepage. 
         if (result.IsSuccessStatusCode)
         {
-            success = true;
-
 #pragma warning disable CS4014
             LocalStorage.SetItemAsync<User>("user", await result.Content.ReadFromJsonAsync<TUser>() ?? new TUser { Id = Guid.Empty, Name = "ERROR", Password = new byte[32] });
 #pragma warning restore CS4014
@@ -83,13 +106,16 @@ else
             return;
         }
 
-        success = false;
-
+        // If invalid, checks what type of invalid to know what validation errors to display. 
         switch (result.StatusCode)
         {
+            // If status code is not found (404), adds a not found error. 
             case HttpStatusCode.NotFound:
                 errors.Add($"User {user.Name} with given password not found.");
                 break;
+            // If status code indicates a generic bad request (400), error is an error in validating the properties of the user. 
+            // So parses the contents of the HTTP response since that contains all validation errors. 
+            // Then adds each one to the error list. 
             case HttpStatusCode.BadRequest:
                 errors.Add($"User {user.Name} could not be validated.");
                 JsonDocument doc = await JsonDocument.ParseAsync(result.Content.ReadAsStream());
@@ -103,15 +129,20 @@ else
                     }
                 }
                 break;
+            // These are the only errors provided so the only other possibility would be that the server has crashed or been shut off so displays "UNEXPECTED ERROR"
             default:
                 errors.Add("UNEXPECTED ERROR");
                 break;
         }
     }
 
+    // If in debug mode, logs that it is navigating to sign up. 
+    // Navigates to sign-up. 
     private void ToSignUp()
     {
+        #if DEBUG
         Console.WriteLine("Navigating to Sign-Up");
+        #endif
         NavManager.NavigateTo("/sign-up");
     }
 }

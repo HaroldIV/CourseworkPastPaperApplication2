@@ -1,61 +1,88 @@
-﻿@page "/add-assignment/{ClassId:guid}"
+﻿@*
+    Page title, {ClassId:guid} indicates that the page should be provided with an ID for a class when initialised
+    Injects an HTTP client via dependency injection. 
+    Also injects a local storage service. 
+*@
+@page "/add-assignment/{ClassId:guid}"
 @inject HttpClient Http
+@inject ILocalStorageService LocalStorage
 @using MyProject.Components
 @using OneOf
 @using OneOf.Types
-@inject ILocalStorageService LocalStorage
+@using System.IO;
 
 <PageTitle>Add Assignments</PageTitle>
 
+@*Text input component with its value binded to the assignmentName variable and a placeholder of `Assignment Name`*@
 <InputText @bind-Value="assignmentName" placeholder="Assignment Name"/>
 <br/>
 
-Due: <InputDate TValue="DateOnly" @bind-Value="due" min="@minimumDateForSetAndDue"/>
+@*Date input with its value bound to the due variable and a minimum date of minimumDateForDue*@
+Due: <InputDate TValue="DateOnly" @bind-Value="due" min="@minimumDateForDue"/>
 <br/>
+@*Displays the error message if one is present. *@
 @errorMessage
 <br/>
+@*Component that allows for searching for and selecting questions with the HandleQuestionSelected function provided to govern what to do when a question is selected. *@
 <SearchForQuestion OnQuestionSelected="HandleQuestionSelected"/>
 <br/>
 
+@*
+    Displays all retrieved questions with their file names and a button to remove them from the set of questions. 
+    This is a custom component found in the Shared directory of the Client project. 
+*@
 @foreach (var question in questions)
 {
-    @Path.GetFileNameWithoutExtension(question.FileName) <button @onclick="() => { questions.Remove(question); StateHasChanged(); }">Remove Image</button>
+    @*@onclick handles when the button is clicked, removes the question from the set of retrieved questions and then indicates that the StateHasChanged and so that the component should rerender*@
+    @Path.GetFileNameWithoutExtension(question.FileName) <button @onclick="() => { questions.Remove(question); StateHasChanged(); }">Remove Question</button>
     <br>
 }
 
 <br/>
 
+@*Button linking to the AddNewAssignment function that adds a new assignment*@
 <button @onclick="AddNewAssignment">Add new Assignment</button>
 
 
 @code
 {
+    @*ID parameter the page was provided with. *@
     [Parameter]
     public Guid ClassId { get; set; }
 
-    private readonly string minimumDateForSetAndDue = DateOnly.FromDateTime(DateTime.Now).ToString("yyyy-MM-dd");
+    @*String representation of today in ISO 8601 format. *@
+    private readonly string minimumDateForDue = DateOnly.FromDateTime(DateTime.Now).ToString("yyyy-MM-dd");
 
+    @*Questions to add*@
     private HashSet<Question> questions { get; set; } = new HashSet<Question>();
 
+    // Error message in case adding an assignment fails. 
     private string errorMessage = string.Empty;
 
+    // Assignment name for assignment to create. 
     private string assignmentName { get; set; } = string.Empty;
 
+    // Date assignment is due, initialised to today. 
     private DateOnly due { get; set; } = DateOnly.FromDateTime(DateTime.Now);
 
+    // Adds the question to the set of questions to add. 
     private void HandleQuestionSelected(Question question)
     {
         questions.Add(question);
     }
 
+    // Returns a discriminated union of Success and Error from the OneOf package. 
     private async Task<OneOf<Success, Error>> AddNewAssignment()
     {
+        // Gets today. 
         var today = DateOnly.FromDateTime(DateTime.Now);
 
+        // If due is before today. 
         if (due.CompareTo(today) == -1)
         {
             errorMessage = "Cannot be due before today";
 
+            // Indicates that the component should rerender and returns an Error. 
             StateHasChanged();
 
             return new Error();
@@ -68,10 +95,13 @@ Due: <InputDate TValue="DateOnly" @bind-Value="due" min="@minimumDateForSetAndDu
             Set = today
         };
 
+        // Adds each question to the assignment
         questions.ForEach(assignment.Questions.Add);
 
+        // Uses the injected HttpClient to post the assignment to the server. 
         await Http.PostAsJsonAsync<Assignment>($"https://localhost:7053/Class/{ClassId}/Assignments", assignment);
 
+        // Rerenders the page and indicates a successful execution. 
         StateHasChanged();
 
         return new Success();

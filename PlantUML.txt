@@ -1,0 +1,459 @@
+@startuml
+
+abstract class DbTable {
+    - Id : Guid
+    + GetId() : Guid
++ SetId(id : Guid) : void
+    + {abstract} GetHashCode() : int
+    + {abstract} Equals(obj: object?) : bool
+    + {abstract} operator ==(left: DbTable, right: DbTable) : bool
+    + {abstract} operator !=(left: DbTable, right: DbTable) : bool
+}
+
+class PapersDbContext extends DbContext
+{
++ PapersDbContext()
++ PapersDbContext(options : DbContextOptions<PapersDbContext>)
++ {static} SQLUtf8ToString(bytes : byte[]) : string
++ {static} Soundex(argument : string) : string
+# {abstract} OnModelCreating(modelBuilder : ModelBuilder) : void
+- {static} SetUpFilterOptions<T>(filterOption : EntityTypeBuilder<T>) : void
+- Assignments : DbSet<Assignment>
++ GetAssignments() : DbSet<Assignment>
++ SetAssignments(assignments : DbSet<Assignment>) : void
+- Classes : DbSet<Class>
++ GetClasses() : DbSet<Class>
++ SetClasses(classes : DbSet<Class>) : void
+- PaperResults : DbSet<PaperResult>
++ GetPaperResults() : DbSet<PaperResult>
++ SetPaperResults(paperresults : DbSet<PaperResult>) : void
+- Questions : DbSet<Question>
++ GetQuestions() : DbSet<Question>
++ SetQuestions(questions : DbSet<Question>) : void
+- Students : DbSet<Student>
++ GetStudents() : DbSet<Student>
++ SetStudents(students : DbSet<Student>) : void
+- Teachers : DbSet<Teacher>
++ GetTeachers() : DbSet<Teacher>
++ SetTeachers(teachers : DbSet<Teacher>) : void
+- ExamBoards : DbSet<ExamBoard>
++ GetExamBoards() : DbSet<ExamBoard>
++ SetExamBoards(examboards : DbSet<ExamBoard>) : void
+- Levels : DbSet<Level>
++ GetLevels() : DbSet<Level>
++ SetLevels(levels : DbSet<Level>) : void
+}
+PapersDbContext *-- Assignment
+PapersDbContext *-- Class
+PapersDbContext *-- PaperResult
+PapersDbContext *-- Question
+PapersDbContext *-- Student
+PapersDbContext *-- Teacher
+PapersDbContext *-- ExamBoard
+PapersDbContext *-- Level
+
+class PaperResult extends DbTable {
+- Score : int
++ GetScore() : int
++ SetScore(score : int) : void
+- AssignmentId : Guid
++ GetAssignmentId() : Guid
++ SetAssignmentId(assignmentid : Guid) : void
+- StudentId : Guid
++ GetStudentId() : Guid
++ SetStudentId(studentid : Guid) : void
+- QuestionId : Guid
++ GetQuestionId() : Guid
++ SetQuestionId(questionid : Guid) : void
+- Assignment : Assignment
++ GetAssignment() : Assignment
++ SetAssignment(assignment : Assignment) : void
+- Question : Question
++ GetQuestion() : Question
++ SetQuestion(question : Question) : void
+- Student : Student
++ GetStudent() : Student
++ SetStudent(student : Student) : void
+}
+PaperResult o-- Assignment
+PaperResult o-- Question
+PaperResult o-- Student
+
+class Class extends DbTable
+{
+- TeacherId : Guid
++ GetTeacherId() : Guid
++ SetTeacherId(teacherid : Guid) : void
+- Name : string
++ GetName() : string
++ SetName(name : string) : void
+- TeacherNavigation : Teacher
++ GetTeacherNavigation() : Teacher
++ SetTeacherNavigation(teachernavigation : Teacher) : void
+- /readonly/ Students : ICollection<Student>
++ GetStudents() : ICollection<Student>
+- /readonly/ Assignments : ICollection<Assignment>
++ GetAssignments() : ICollection<Assignment>
+}
+Class o-- Teacher
+Class o-- Student
+Class *-- Assignment
+
+class Assignment {
+    - Set : DateOnly
++ GetSet() : DateOnly
++ SetSet(set : DateOnly) : void
+- Due : DateOnly
++ GetDue() : DateOnly
++ SetDue(due : DateOnly) : void
+- Name : string
++ GetName() : string
++ SetName(name : string) : void
++ GetTotalMarks() : int
+- Questions : ICollection<Question>
++ GetQuestions() : ICollection<Question>
++ SetQuestions(questions : ICollection<Question>) : void
+- Class : Class
++ GetClass() : Class
++ SetClass(class : Class) : void
+}
+Assignment o-- Class
+Assignment o-- Question
+
+interface IFilterOption {
++ GetId() : short
++ SetId(id : short) : void
++ GetName() : string
++ SetName(name : string) : void
+}
+
+class RadioOptions
+{
++ RadioOptions(levels : Level[], examBoards : ExamBoard[])
+- Levels : Level[]
++ GetLevels() : Level[]
++ SetLevels(levels : Level[]) : void
+- ExamBoards : ExamBoard[]
++ GetExamBoards() : ExamBoard[]
++ SetExamBoards(examboards : ExamBoard[]) : void
+}
+RadioOptions o-- Level
+RadioOptions o-- ExamBoard
+
+
+DbTable <|-- Question
+DbTable <|-- Assignment
+
+@enduml
+
+@startuml
+
+class Question {
+    - FileName : string
++ GetFileName() : string
++ SetFileName(filename : string) : void
+- Marks : int
++ GetMarks() : int
++ SetMarks(marks : int) : void
+- Data : byte[]
++ GetData() : byte[]
++ SetData(data : byte[]) : void
+- ReadData : string
++ GetReadData() : string
++ SetReadData(readdata : string) : void
+- ExamBoard : Nullable<ExamBoard>
++ GetExamBoard() : Nullable<ExamBoard>
++ SetExamBoard(examboard : Nullable<ExamBoard>) : void
+- Level : Nullable<Level>
++ GetLevel() : Nullable<Level>
++ SetLevel(level : Nullable<Level>) : void
+}
+Question o-- Level
+Question o-- ExamBoard
+
+class Level implements IFilterOption {
+    - Id : short
++ GetId() : short
++ SetId(id : short) : void
+- Name : string
++ GetName() : string
++ SetName(name : string) : void
+    + {abstract} ToString() : string
+}
+
+class ExamBoard implements IFilterOption
+{
+    - Id : short
++ GetId() : short
++ SetId(id : short) : void
+- Name : string
++ GetName() : string
++ SetName(name : string) : void
+    + {abstract} ToString() : string
+}
+
+Question o-- Level
+Question o-- ExamBoard
+
+@enduml
+
+@startuml
+
+class FilterOptionConverter<T> extends "TypeConverter<T>"
+{
+  + {abstract} CanConvertFrom(context: Nullable<ITypeDescriptorContext>, sourceType: Type): bool
+  + {abstract} ConvertFrom(context: Nullable<ITypeDescriptorContext>, culture: Nullable<CultureInfo>, value: object): Nullable<object>
+  + {abstract} ConvertTo(context: Nullable<ITypeDescriptorContext>, culture: Nullable<CultureInfo>, value: Nullable<object>, destinationType: Type): Nullable<object>
+}
+
+class PaperResult extends DbTable {
+- Score : int
++ GetScore() : int
++ SetScore(score : int) : void
+- AssignmentId : Guid
++ GetAssignmentId() : Guid
++ SetAssignmentId(assignmentid : Guid) : void
+- StudentId : Guid
++ GetStudentId() : Guid
++ SetStudentId(studentid : Guid) : void
+- QuestionId : Guid
++ GetQuestionId() : Guid
++ SetQuestionId(questionid : Guid) : void
+- Assignment : Assignment
++ GetAssignment() : Assignment
++ SetAssignment(assignment : Assignment) : void
+- Question : Question
++ GetQuestion() : Question
++ SetQuestion(question : Question) : void
+- Student : Student
++ GetStudent() : Student
++ SetStudent(student : Student) : void
+}
+PaperResult o-- Assignment
+PaperResult o-- Question
+PaperResult o-- Student
+
+class Class extends DbTable
+{
+- TeacherId : Guid
++ GetTeacherId() : Guid
++ SetTeacherId(teacherid : Guid) : void
+- Name : string
++ GetName() : string
++ SetName(name : string) : void
+- TeacherNavigation : Teacher
++ GetTeacherNavigation() : Teacher
++ SetTeacherNavigation(teachernavigation : Teacher) : void
+- /readonly/ Students : ICollection<Student>
++ GetStudents() : ICollection<Student>
+- /readonly/ Assignments : ICollection<Assignment>
++ GetAssignments() : ICollection<Assignment>
+}
+Class o-- Teacher
+Class o-- Student
+Class *-- Assignment
+
+struct QuestionSearchModel
+{
+- KeywordsList : HashSet<string>
++ GetKeywordsList() : HashSet<string>
++ SetKeywordsList(keywordslist : HashSet<string>) : void
+- All : bool
++ GetAll() : bool
++ SetAll(all : bool) : void
+- ExamBoards : IEnumerable<ExamBoard>
++ GetExamBoards() : IEnumerable<ExamBoard>
++ SetExamBoards(examboards : IEnumerable<ExamBoard>) : void
+- ValidLevels : IEnumerable<Level>
++ GetValidLevels() : IEnumerable<Level>
++ SetValidLevels(validlevels : IEnumerable<Level>) : void
+}
+QuestionSearchModel o-- ExamBoard
+QuestionSearchModel o-- Level
+
+class Student extends User
+{
++ Student()
++ Student(id : Guid, name : string, password : byte[])
+- /readonly/ PaperResults : ICollection<PaperResult>
++ GetPaperResults() : ICollection<PaperResult>
+- /readonly/ CurrentClasses : ICollection<Class>
++ GetCurrentClasses() : ICollection<Class>
+}
+Student *-- PaperResult
+Student o-- Class
+
+class Teacher extends User
+{
++ Teacher()
++ Teacher(id : Guid, name : string, password : byte[])
+- /readonly/ Classes : ICollection<Class>
++ GetClasses() : ICollection<Class>
+}
+Teacher *-- Class
+
+abstract class User extends DbTable
+{
++ User()
++ User(id : Guid, name : string, password : byte[])
++ User(id : Guid, name : string, password : string)
++ SQLStringToUtf8(password : string) : byte[]
+- Name : string
++ GetName() : string
++ SetName(name : string) : void
+- Password : byte[]
++ GetPassword() : byte[]
++ SetPassword(password : byte[]) : void
++ GetPasswordAsHex() : string
+}
+
+struct UserWithUnencryptedPassword
+{
+- Name : string
++ GetName() : string
++ SetName(name : string) : void
+- Password : string
++ GetPassword() : string
++ SetPassword(password : string) : void
+}
+
+class Checked<T>
+{
+- /readonly/ Value : T
++ GetValue() : T
+- IsChecked : bool
++ GetIsChecked() : bool
++ SetIsChecked(ischecked : bool) : void
++ {static} implicit operator(value : T) : Checked<T>
++ {static} implicit operator(value : Checked<T>) : T
+}
+
+class ResultsTable implements IResultsTable, ISerializable
+{
++ ResultsTable()
++ ResultsTable(results : string[][], questions : Question[], students : Student[])
+- Results : string[][]
++ GetResults() : string[][]
++ SetResults(results : string[][]) : void
+- Questions : Question[]
++ GetQuestions() : Question[]
++ SetQuestions(questions : Question[]) : void
+- Students : Student[]
++ GetStudents() : Student[]
++ SetStudents(students : Student[]) : void
++ GetRows() : int
++ GetColumns() : int
++ {static} implicit operator(table : ResultsTable) : string[][]
++ {static} FromIResultsTable(table : IResultsTable) : ResultsTable
++ {method} GetIndexer[i : int, j : int] : string
++ {method} SetIndexer[i : int, j : int](value : string) : void
++ {abstract} GetEnumerator() : IEnumerator<IEnumerable<string>>
++ {abstract} IEnumerable.GetEnumerator() : IEnumerator
++ {abstract} GetObjectData(info : SerializationInfo, context : StreamingContext) : void
+# {abstract} ResultsTable(info : SerializationInfo, context : StreamingContext)
+}
+ResultsTable o-- Question
+ResultsTable o-- Student
+
+"IEnumerable<string>" <|.. ResultsTable
+
+interface IResultsTable
+{
++ GetQuestions() : Question[]
++ SetQuestions(questions : Question[]) : void
++ GetStudents() : Student[]
++ SetStudents(students : Student[]) : void
++ GetResults() : string[][]
++ SetResults(results : string[][]) : void
++ {method} GetIndexer[i : int, j : int] : string
++ {method} SetIndexer[i : int, j : int](value : string) : void
+}
+IResultsTable o-- Question
+IResultsTable o-- Student
+
+class NonEnumerableResultsTable implements IResultsTable
+{
+- table : ResultsTable
++ GetStudents() : Student[]
++ SetStudents(students : Student[]) : void
++ GetQuestions() : Question[]
++ SetQuestions(questions : Question[]) : void
++ GetResults() : string[][]
++ SetResults(results : string[][]) : void
++ {method} GetIndexer[i : int, j : int] : string
++ {method} SetIndexer[i : int, j : int](value : string) : void
++ {static} implicit operator(nonEnumerableResultsTable : NonEnumerableResultsTable) : ResultsTable
++ {static} implicit operator(resultsTable : ResultsTable) : NonEnumerableResultsTable
+}
+NonEnumerableResultsTable o-- ResultsTable
+
+class ResultsTableInitialisationComponents
+{
+- Students : Student[]
++ GetStudents() : Student[]
++ SetStudents(students : Student[]) : void
+- AssignmentId : Guid
++ GetAssignmentId() : Guid
++ SetAssignmentId(id : Guid) : void
+- Name : string
++ GetName() : string
++ SetName(name : string) : void
+- Questions : Question[]
++ GetQuestions() : Question[]
++ SetQuestions(questions : Question[]) : void
+}
+ResultsTableInitialisationComponents o-- Student
+ResultsTableInitialisationComponents o-- Question
+
+class ResultsTableJsonConverter extends "JsonConverter<ResultsTable>"
+{
++ ResultsTableJsonConverter()
+- {static} /readonly/ propertyNameToInfoDictionary : "Dictionary<string, PropertyInfo>"
++ {abstract} Read(reader : ref Utf8JsonReader, typeToConvert : Type, options : JsonSerializerOptions) : Nullable<ResultsTable>
++ {abstract} Write(writer : Utf8JsonWriter, value : ResultsTable, options : JsonSerializerOptions) : void
+}
+
+class IgnorePropertyIfConverter<T> extends "JsonConverter<T>"
+{
++ IgnorePropertyIfConverter(propertyPredicate : Func<PropertyInfo, bool>)
+        - /readonly/ propertyPredicate : Func<PropertyInfo, bool>
++ {abstract} Read(reader : ref Utf8JsonReader, typeToConvert : Type, options : JsonSerializerOptions) : Nullable<ResultsTable>
++ {abstract} Write(writer : Utf8JsonWriter, value : ResultsTable, options : JsonSerializerOptions) : void
+}
+
+class ImageReader
+{
++ {static} ImageReader()
++ {static} ReadImage(imageBytes : byte[]) : Task<string>
++ {static} ReadImageAsync(imageBytes : byte[]) : Task<string>
+- {static} /readonly/ ocr : TesseractEngine
+- {static} isProcessing : bool
+}
+ImageReader *-- TesseractEngine
+
+class UserValidator extends "AbstractValidator<UserWithUnencryptedPassword>"
+{
++ UserValidator()
+- /readonly/ validPasswordChars : IReadOnlySet<char>
+}
+UserValidator o-- ValidCharsHashSetSingleton
+
+class ValidCharsHashSetSingleton extends "HashSet<char>"
+{
+- ValidCharsHashSetSingleton()
+- /const/ ValidPasswordCharacters : string
+        - {static} instance : ValidCharsHashSetSingleton
+        - {static} GetInstance : InstanceGetter
++ {static} GetGetInstance() : InstanceGetter
+- {static} SetGetInstance(instanceGetter : InstanceGetter) : void
+- {static} GetAndSetInstance() : ValidCharsHashSetSingleton
+- {static} OnlyGetInstance() : ValidCharsHashSetSingleton
+}
+ValidCharsHashSetSingleton o-- InstanceGetter
+
+class InstanceGetter extends "Func<ValidCharsHashSetSingleton>"
+{
+
+}
+
+@enduml

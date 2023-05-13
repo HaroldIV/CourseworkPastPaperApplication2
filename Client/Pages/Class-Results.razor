@@ -1,4 +1,10 @@
-﻿@page "/class-results/{AssignmentId:guid}"
+﻿@*
+    Page title, {AssignmentId:guid} indicates that the page should be provided with an ID for an assignment when initialised
+    Injects an HTTP client via dependency injection.
+    Also injects a navigation manager that can reroute the user. 
+    Also injects a local storage service that allows for the page to access local storage. 
+*@
+@page "/class-results/{AssignmentId:guid}"
 @inject HttpClient Http
 @inject ILocalStorageService LocalStorage
 @inject NavigationManager NavManager
@@ -8,6 +14,12 @@
 
 <PageTitle>View Class Results</PageTitle>
 
+@*
+    Ensures that the results table is not null then, if not null, renders the component for displaying the results table. 
+    Sets the results for the component to use to be the results retrieved from the server. 
+    Sets the OnSaveChanges event callback to be SaveNewResults, this triggers when the user clicks a button to save new results they have added to the component. 
+    The ResultsTableComponent is a custom component for rendering results tables and can be found in Client/Shared. 
+*@
 @if (results is not null)
 {
     <ResultsTableComponent Results="results" OnSaveChanges="SaveNewResults"/>
@@ -16,44 +28,58 @@
 
 @code
 {
+    @*ID parameter the page was provided with. *@
     [Parameter]
     public Guid AssignmentId { get; set; }
 
+    // ResultsTable, the results being displayed are to represent. 
     private ResultsTable? results { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
+        // Creates new JSON options to use for deserialisation in the page. 
         JsonSerializerOptions jsonOptions = new JsonSerializerOptions
         {
-            //Converters = { new ResultsTableJsonConverter() },
             Converters = { new IgnorePropertyIfConverter<Question>(info => info.Name == "Data") },
             PropertyNameCaseInsensitive = true,
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         };
 
-        //results = await Http.GetFromJsonAsync<NonEnumerableResultsTable>($"https://localhost:7053/Assignment/{AssignmentId}/Results");
-
-        //results = (await Http.GetStringAsync($"https://localhost:7053/Assignment/{AssignmentId}/Results") ?? string.Empty).Deserialize<NonEnumerableResultsTable>();
-
-        //if (results is null)
-        //{
-        //    Console.Error.WriteLine($"Assignment with id {AssignmentId} not found");
-        //}
-
+        // Deserialises the components required to build a results table for the assignment from the server. 
         ResultsTableInitialisationComponents? resultsTableInitialisationComponents = await Http.GetFromJsonAsync<ResultsTableInitialisationComponents>($"https://localhost:7053/Assignment/{AssignmentId}/Results");
 
+        // Ensures that the components were able to be found (null if not found). 
         if (resultsTableInitialisationComponents is null)
         {
+            // Indicates an error then returns early. 
             Console.Error.WriteLine($"Assignment with id {AssignmentId} not found");
 
             return;
         }
 
-        Question[] questions = resultsTableInitialisationComponents.Questions.ToArray();
-        Student[] students = resultsTableInitialisationComponents.Students.ToArray();
+        // Gets references to the questions and students for quicker and more readable access. 
+        Question[] questions = resultsTableInitialisationComponents.Questions;
+        Student[] students = resultsTableInitialisationComponents.Students;
 
+        // Makes separate queries for the students to get their paper results since doing it all in a single query would put unnecessary stress on the server. 
         await students.ForEach(async student => student.PaperResults.AddRange((await Http.GetFromJsonAsync<IEnumerable<PaperResult>>($"/Assignment/{AssignmentId}/Student/{student.Id}/Result") ?? Enumerable.Empty<PaperResult>())));
 
+        // Creates a table and assigns it to results to be used in the ResultsTableComponent component. 
+        results = BuildTableFromQuestionsAndStudents(questions, students);
+
+        await base.OnInitializedAsync();
+    }
+
+    // Saves the new results by sending all the paper results to the server to be updated. 
+    private async Task SaveNewResults(IEnumerable<PaperResult> paperResults)
+    {
+        await Http.PutAsJsonAsync<IEnumerable<PaperResult>>($"https://localhost:7053/PaperResult/Results", paperResults);
+    }
+
+    // Builds a ResultsTable from questions and students. 
+    private ResultsTable BuildTableFromQuestionsAndStudents(Question[] questions, Student[] students)
+    {
+        // Initialises variables used. 
         int rowCount = questions.Length + 1;
         int columnCount = students.Length;
         string[][] scoresTable = new string[rowCount][];
@@ -63,21 +89,16 @@
             scoresTable[i] = new string[columnCount];
         }
 
+        // Adds each paper result out of the score for the question in the form {score}/{marks}, for example: 9/15 marks for a question. 
         foreach (var (i, question) in questions.WithIndex())
         {
+            // Gets the paper result that matches to the question. 
             foreach (var (j, paperResult) in students.Select(student => student.PaperResults.First(result => result.QuestionId == question.Id)).WithIndex())
             {
                 scoresTable[i][j] = $"{paperResult.Score}/{question.Marks}";
             }
         }
 
-        results = new ResultsTable(scoresTable, questions, students);
-
-        await base.OnInitializedAsync();
-    }
-
-    private async Task SaveNewResults(IEnumerable<PaperResult> paperResults)
-    {
-        await Http.PostAsJsonAsync<IEnumerable<PaperResult>>($"https://localhost:7053/PaperResult/Results", paperResults);
+        return new ResultsTable(scoresTable, questions, students);
     }
 }

@@ -1,8 +1,17 @@
-﻿@inject HttpClient Http
+﻿@*
+    This component injects an HTTP client so it can handle HTTP request operations. 
+*@
+@inject HttpClient Http
 
+@*
+    Text input for keywords to search for. 
+    Binds the value to the keyword variable. 
+    Button below adds a keyword via the AddKeyword function. 
+*@
 <InputText placeholder="Keyword to search for" @bind-Value="keyword"/>
 <button @onclick="AddKeyword">Add Keyword</button>
 
+@*This lists all keywords from questionSearchModel.KeywordsList with each having a button to remove the keword from the list of keywords and rerender the component. *@
 <h3>Keywords</h3>
 <ul>
     @foreach (string keyword in questionSearchModel.KeywordsList)
@@ -12,31 +21,45 @@
     }
 </ul>
 
+@*Ensures options has been successfully retrieved from the server. *@
 @if (options is not null)
 {
+    @*Renders each level as a checkbox with a label indicating the name of the level next to it. *@
     @foreach (var level in options.Levels)
     {
         <input type="checkbox" @onchange="e => HandleBoxCheck<Level>(e, level, levels)"/> @level.Name
     }
     <br>
     <hr>
+    @*Renders each exam board as a checkbox with a label indicating the name of the exam board next to it. *@
     @foreach (var examBoard in options.ExamBoards)
     {
         <input type="checkbox" @onchange="e => HandleBoxCheck<ExamBoard>(e, examBoard, examBoards)" /> @examBoard.Name
     }
 }
 
-🗸:  Search for matches on all keywords <br>
-x:  Get most matches possible
+@*Checkbox for whether or not to search for only questions that match all keywords or to take questions ordered by how many matches. *@
+<br/>
+<span class="text-success">🗸</span>  Search for matches on all keywords <br/>
+<span class="text-danger">x</span>:  Get most matches possible
+<br/>
 <InputCheckbox @bind-Value="all"/>
 
-<button @onclick="SearchForMatchingQuestion">Search for Questions</button>
+@*Clicking this button will call the SearchForMatchingQuestions function and search for matching questions and assign them to questions. *@
+<button @onclick="SearchForMatchingQuestions">Search for Questions</button>
 
+@*Ensures that questions have been retrieved already and that questions were actually retrieved. *@
 @if (questions is not null && questions.Any())
 {
+    @*Button to clear retrieved questions, calls the ClearQuestions function. *@
     <button @onclick="() => ClearQuestions(questions)">Clear</button>
     <br>
 
+    @*
+        Renders each question's image with a button that removes the question from the search results and calls 
+        the OnQuestionSelected event callback which is provided by the page containing the component and in the 
+        one use case in this codebase, adds it to a set of questions that are then added. 
+    *@
     @foreach (Question question in questions)
     {
         <img src="@question.ToDataUrl()"/>
@@ -46,26 +69,40 @@ x:  Get most matches possible
 
 @code
 {
+    // Event callback provided by the page containing this that does something with a selected question. 
+    // In the one use case in this codebase, this adds to a set of questions that are then sent to the server to create a new assignment. 
     [Parameter]
     public EventCallback<Question> OnQuestionSelected { get; set; }
 
+    // all used for binding to the InputCheckbox above.
+    // Accessor functions simply link directly to the corresponding properties on the QuestionSearchModel instance.
+    // Direct access is not supported by bindings and so this must be used.
+    // This indicates whether to get only question that match all keywords or instead to get quetsions ordered by the number of matches. 
     private bool all 
     { 
         get => questionSearchModel.All; 
         set => questionSearchModel.All = value; 
     }
 
-    /// Render questions and provide some kind of event or function that triggers when one is selected, allowing it to be accessed from outside the component
+    // Set of questions retrieved in search. 
     private HashSet<Question>? questions { get; set; }
 
+    // Set of levels, set of exam boards that have been selected to be searched in the question search. 
+    // HashSets used to speed up accessing to O(1). 
     private HashSet<Level> levels { get; set; } = new HashSet<Level>();
     private HashSet<ExamBoard> examBoards { get; set; } = new HashSet<ExamBoard>();
 
-    private QuestionSearchModel questionSearchModel = new QuestionSearchModel { KeywordsList = new List<string>() };
+    // The QuestionSearchModel used for searching for questions. 
+    // This contains filters that are used to find the correct questions. 
+    private QuestionSearchModel questionSearchModel = new QuestionSearchModel { KeywordsList = new HashSet<string>() };
+    // The current keyword that has just been typed. 
     private string keyword { get; set; } = string.Empty;
 
+    // options represents the radio filter options from the database. 
+    // These are then selected as part of the searching process. 
     private RadioOptions? options { get; set; }
 
+    // This simply removes all the questions then rerenders the component. 
     private void ClearQuestions(HashSet<Question> questions)
     {
         questions.Clear();
@@ -73,6 +110,8 @@ x:  Get most matches possible
         StateHasChanged();
     }
 
+    // This simply removes the question from the search results and rerenders the component to show its removal. 
+    // It then invokes the OnQuestionSelected event callback provided to it by the page containing it. 
     private async Task HandleQuestionSelected(HashSet<Question> questions, Question question)
     {
         questions.Remove(question);
@@ -82,24 +121,31 @@ x:  Get most matches possible
         await OnQuestionSelected.InvokeAsync(question);
     }
 
-    private async Task SearchForMatchingQuestion()
+    // This searches for questions that match the questionSearchModel filters. 
+    private async Task SearchForMatchingQuestions()
     {
+        // Sends a request to the server to retrieve the questions. 
+        // HTTP Get requests do not have bodies and so an HTTP Post request is used in its place. 
         var response = await Http.PostAsJsonAsync("https://localhost:7053/Question", questionSearchModel);
 
-        Console.WriteLine(await response.Content.ReadAsStringAsync());
-
+        // Reads the response's content as a hash set of questions and assigns that to questions. 
         questions = await response.Content.ReadFromJsonAsync<HashSet<Question>>();
 
+        // Rerenders the component to display the new questions. 
         StateHasChanged();
     }
 
+    // Generic function used for checking the boxes for the levels and for the exam boards. 
     private void HandleBoxCheck<T>(ChangeEventArgs e, T item, ICollection<T> values)
     {
+        // Checks to ensure the value of the event argument exists. 
+        // If not, early return (Guard Clause). 
         if (e.Value is null)
         {
             return;
         }
 
+        // Checks if checkbox has just been checked and adds to the collection of values (levels or exam boards to filter by in the use case above) if true. 
         if ((bool)e.Value)
         {
             values.Add(item);
@@ -107,30 +153,39 @@ x:  Get most matches possible
             return;
         }
 
+        // Otherwise, removes the item from the collection. 
         values.Remove(item);
     }
 
     protected override async Task OnInitializedAsync()
     {
+        // Retrieves all options from the server or initialises to empty collections of options if the options cannot be found from the server. 
         options = await Http.GetFromJsonAsync<RadioOptions>("https://localhost:7053/Options") ?? new RadioOptions(ExamBoards: Array.Empty<ExamBoard>(), Levels: Array.Empty<Level>());
 
+        // Assigns the options on the search model to the empty sets to keep them synchronised. 
         questionSearchModel.ExamBoards = examBoards;
         questionSearchModel.ValidLevels = levels;
 
         await base.OnInitializedAsync();
     }
 
+    // Adds a keyword to the search models keyword list. 
     private void AddKeyword()
     {
+        // Ensures the keyword is not purely whitespace and early returns if it is (Guard Clause). 
         if (string.IsNullOrWhiteSpace(keyword))
         {
             return;
         }
 
+        // Adds the keyword to the keywords in the question search model. 
+        // Note that the keywords in the question search model are represented by a HashSet and so cannot contain duplicate keywords. 
         questionSearchModel.KeywordsList.Add(keyword);
 
+        // Reassigns keyword to be an empty string. This will also clear the input text field as their values are bound. 
         keyword = string.Empty;
 
+        // Rerenders the component to display the new changes. 
         StateHasChanged();
     }
 }

@@ -1,16 +1,23 @@
-﻿@page "/upload-papers"
+﻿@*Injects an HttpClient into the page to allow it to make HTTP requests. *@
+@page "/upload-papers"
+@using System.IO;
 @inject HttpClient Http
 
 <PageTitle>Upload Papers</PageTitle>
 
+@*Input value of marks, binded to the marks variable. *@
 Marks: <InputNumber TValue="int" @bind-Value="marks" Step="1"/>, @marks
 
 <br>
 
+@*File input, set to accept images and OnChange is set to the HandleFileChange function*@
 <InputFile accept="image/*" OnChange="HandleFileChange"/>
 
 <br>
-@*Extract this into a separate component*@
+@*
+    Displays lists of all the radio options: exam board and level. 
+    Each set of options is prepended by a null value which is translated to no level or exam board or `None`. 
+*@
 @if (options is not null)
 {
     <InputRadioGroup TValue="Level" @bind-Value="level">
@@ -33,8 +40,10 @@ Marks: <InputNumber TValue="int" @bind-Value="marks" Step="1"/>, @marks
 
 <br>
 
+@*Button that links to the HandleSubmit function. *@
 <button @onclick="HandleSubmit">Submit File</button>
 
+@*Renders the image file selected to make the question out of. *@
 @if (url is not null)
 {
     <img src="@url"/>
@@ -42,28 +51,39 @@ Marks: <InputNumber TValue="int" @bind-Value="marks" Step="1"/>, @marks
 
 @code
 {
+    // Represents the radio options. 
     private RadioOptions? options { get; set; }
 
+    // Represents the selected level and exam board. 
     private Level? level { get; set; }
     private ExamBoard? examBoard { get; set; }
+
+    // Represents the data URL that represents the image. 
     private string? url { get; set; }
+    // Represents the count of marks the question is to be worth. 
     private int marks { get; set; } = 1;
 
+    // Actual image file. 
     IBrowserFile? image;
+    // Bytes representing the image file. 
     byte[]? imageData; 
 
     protected override async Task OnInitializedAsync()
     {
+        // Retrieves the radio options from the server. 
         options = await Http.GetFromJsonAsync<RadioOptions>("https://localhost:7053/Options") ?? new RadioOptions(ExamBoards: Array.Empty<ExamBoard>(), Levels: Array.Empty<Level>());
 
         await base.OnInitializedAsync();
     }
 
+    // Handles file changes by translating the image into a data URL and storing the images data for sending to the server later. 
     private async Task HandleFileChange(InputFileChangeEventArgs e)
     {
+        // Gets the image from the event arguments. 
         image = e.File;
 
         /// Could be optimised to avoid unnecessary allocations
+        // Manipulates streams to retrieve the byte[] representation of the image then converts that to a data URL and stores the image data as well. 
         using (var reader = new MemoryStream())
         {
             await image.OpenReadStream().CopyToAsync(reader);
@@ -76,16 +96,20 @@ Marks: <InputNumber TValue="int" @bind-Value="marks" Step="1"/>, @marks
 
         }
 
+        // Indicates that the page should rerender. 
         StateHasChanged();
     }
 
+    // Handles the submitting of a new question to add. 
     private async Task HandleSubmit()
     {
+        // Early return guard clause against no image existing. 
         if (image is null)
         {
             return;
         }
 
+        // Initialises a question and ensures that the image was successfully translated by checking it is not null and throwing if it is. 
         Question question = new Question
         {
             FileName = image.Name,
@@ -95,17 +119,24 @@ Marks: <InputNumber TValue="int" @bind-Value="marks" Step="1"/>, @marks
             Marks = marks
         };
 
-        var response = await Http.PostAsJsonAsync<Question>("https://localhost:7053/Image", question);
+        // Sends the question and image data and gets the HTTP response back. 
+        var response = await Http.PutAsJsonAsync<Question>("https://localhost:7053/Image", question);
 
+        // Ensures the file was successfully sent and, if the debug build is in use, logs a success message. Otherwise, simply returns. 
         if (response.IsSuccessStatusCode)
         {
+            #if DEBUG
             Console.WriteLine("File sent successfully");
 
             Console.WriteLine($"Image Text: {await response.Content.ReadAsStringAsync()}");
+            #endif
 
             return;
         }
 
-        Console.WriteLine("ERROR: FILE SENDING FAILED");
+        // If debug mode is in use, indicates that the file could not be sent and that an error occurred. 
+        #if DEBUG
+        Console.Error.WriteLine("FILE SENDING FAILED");
+        #endif
     }
 }

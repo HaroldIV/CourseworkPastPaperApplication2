@@ -1,9 +1,10 @@
 ﻿@using System.Linq
 @inject HttpClient Http
 
-<table class="table-bordered">
+<table class="table table-bordered">
     <thead>
         <tr>
+            @*Renders the top row which is always students (and a blank row). *@
             @foreach (string studentName in Results.GetRow(0))
             {
                 <th>@studentName</th>
@@ -11,11 +12,14 @@
         </tr>
     </thead>
     <tbody>
+        @*Renders each subsequent row. The 1 in WithIndex(1) skips the first row but maintains correct index position. *@
         @foreach (var (i, row) in Results.WithIndex(1))
         {
+            @*Splits each row into the first element and the rest then stores the rest in the scores variable (The first column of each row following the first is a question). *@
             <tr>
                 <td>@row.IndexedPartition(0, out IEnumerable<string> scores).First()</td>
 
+                @*Retrieves the scores variable that represents all values but the question so therefore all the score and what they are out of and renders them with an input field that allows the user to change the score for a student for a question. *@
                 @foreach (var (j, result) in (scores ?? Enumerable.Empty<string>()).WithIndex())
                 {
                     <td>@result <input @oninput="e => HandleInput(e, i, j + 1)"/></td>
@@ -25,88 +29,125 @@
     </tbody>
 </table>
 
+@*Causes all inputted scores to be saved to the database. Calls the SaveNewMarks function. *@
 <button @onclick="SaveNewMarks">Save new marks</button>
 
-@code {
+@code 
+{
+    // Results table passed in as a component parameter. The table above is built from this table. 
     [Parameter] 
     public ResultsTable Results { get; set; } = null!;
 
+    // Function provided by the page creating this that handles what to do with the updated paper results. 
+    // Currently in the class-results page, this simply saves each new result to the database. 
     [Parameter]
     public EventCallback<IEnumerable<PaperResult>> OnSaveChanges { get; set; }
 
+    // Positive-only integers that represent the updated. 
+    // Keeps track of all scores provided by the score inputs. 
     private uint[,] editBoxValues { get; set; } = null!;
 
+    // Temporary variable that keeps track of scores after the indexed partition from the row to questions and scores. 
     private IEnumerable<string>? scores { get; set; }
 
     protected override void OnInitialized()
     {
+        // Instanitates the editBoxValues to be one less than the results and column to account for the row and column that is the student names and the questions. 
         editBoxValues = new uint[Results.Rows - 1, Results.Columns - 1];
 
         base.OnInitialized();
     }
 
+    // Handles new score being input. 
     private void HandleInput(ChangeEventArgs e, int i, int j)
     {
+        // Gets the string value of the input. 
         string newValue = (string?)e.Value ?? string.Empty;
 
+        // Predicate that checks the value is a non-negative integer that is not greater than the total marks the question is out of. 
         if (ValidateForNewResult(newValue, Results[i, j]))
         {
-            ReplaceIfNeeded(newValue, i, j);
+            // Replaces value in the table with new value. 
+            ReplaceResultsValue(newValue, i, j);
 
+            // Parses the value and assigns it into editBoxValues so it can be used later without having to reparse from Results. 
             editBoxValues[i - 1, j - 1] = uint.Parse(newValue);
         }
     }
 
+    // Checks input is a valid integer between 0 and the maximum mark for the question (inclusive). 
     private bool ValidateForNewResult(string value, string result)
     {
+        // Ensures the value is a valid integer >= 0 by trying to parse as an unsigned integer. 
         bool isValidInteger = uint.TryParse(value, out uint valueAsUnsignedInteger);
 
+        // Early returns if invalid. 
         if (!isValidInteger)
         {
             return false;
         }
 
+        // Retrieving this value as a span is a small optimisation that prevents unnecessary allocation in the slice part to follow. 
+        // The equivalent string function, substring creates an entire new string whereas this merely provides a modified view over the current string. 
         var resultAsSpan = result.AsSpan();
 
+        // Gets the index of the slash in the marks. 
+        // Marks are in the form {score}/{totalMarks}.
+        // E.g. 7/15. 
+        // Therefore, the value after the '/' is the total mark for the question. 
         int slashIndex = resultAsSpan.IndexOf('/');
 
+        // Gets the maximum marks from after the '/' onwards and returns whether or not the value being checked is less than or equal to the total marks. 
         uint maxMarksForQuestion = uint.Parse(resultAsSpan.Slice(slashIndex + 1));
 
         return valueAsUnsignedInteger <= maxMarksForQuestion;
     }
 
+    // Calls the OnSaveChanges EventCallback that was providided by the page using this component. 
+    // Calls it using the ResultsAsEnumerable function which is below. 
+    // This function converts the results table to a collection of paper results. 
     private async Task SaveNewMarks()
     {
         await OnSaveChanges.InvokeAsync(ResultsAsEnumerable());
     }
 
+    // This converts the results table to a collection of paper results. 
     private IEnumerable<PaperResult> ResultsAsEnumerable()
     {
-        var res = Results; 
-
         for (int i = 0; i < Results.Rows - 1; i++)
         {
             for (int j = 0; j < Results.Columns - 1; j++)
             {
-                var student = Results.Students[j]; 
+                // Retrieves the student and the question the specified indices. 
+                var student = Results.Students[j];
+                var question = Results.Questions[i];
 
-                PaperResult oldResult = student.PaperResults.First(paperResult => paperResult.QuestionId == Results.Questions[i].Id);
+                // Finds the paper result that matches the two values above (student, question). 
+                PaperResult oldResult = student.PaperResults.First(paperResult => paperResult.QuestionId == question.Id);
 
+                // Reassigns the old paper result's score to the new score. 
                 oldResult.Score = (int)editBoxValues[i, j];
 
+                // Yields the result. 
                 yield return oldResult;
             }
         }
     }
 
-    private void ReplaceIfNeeded(string value, int i, int j)
+    // This finds the result corresponding to the two indices provided and reassigns the score to the value provided. 
+    private void ReplaceResultsValue(string value, int i, int j)
     {
+        // Gets the result corresponding to the two indices provided. 
         string result = Results[i, j];
 
+        // Gets the index of the '/' that separates the score from the total marks. 
         int slashIndex = result.IndexOf('/');
 
+        // Reassigns the result to be the new value concatenated with the old value from the '/' onwards. 
+        // Id est, the '/' and the total mark. 
         Results[i, j] = value + result.Substring(slashIndex);
 
+        // Rerenders for the new change. 
         StateHasChanged();
     }
 }

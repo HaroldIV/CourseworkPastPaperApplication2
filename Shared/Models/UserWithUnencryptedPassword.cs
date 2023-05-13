@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace CourseworkPastPaperApplication2.Shared
 {
+    // This class represents the user login/sign-up details that a user may enter on the client-side and supply to the server-side. 
     public struct UserWithUnencryptedPassword
     {
         public string Name { get; set; }

@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 
 namespace CourseworkPastPaperApplication2.Shared
 {
+    // Abstract base class for the Student and Teacher classes, defining the Name, Password, and PasswordAsHex properties of the class. 
     public abstract class User : DbTable
     {
         public User()
@@ -37,6 +38,8 @@ namespace CourseworkPastPaperApplication2.Shared
         [JsonIgnore]
         public string PasswordAsHex { get => Encoding.UTF8.GetString(Password); set => Password = Encoding.UTF8.GetBytes(value); }
 
+        // SQL defined function that converts a password as a string to its byte format
+        // This can be used in SQL queries. 
         public static byte[] SQLStringToUtf8(string password)
         {
             return Encoding.UTF8.GetBytes(password);

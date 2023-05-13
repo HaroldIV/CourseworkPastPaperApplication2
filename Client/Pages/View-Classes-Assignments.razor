@@ -1,4 +1,9 @@
-﻿@page "/view-classes-assignments"
+﻿@*
+    Injects an HTTP client to allow the page to make requests to the server. 
+    Injects a local storage service to allow the page handle local storage. 
+    Injects a navigation manager to allow the page to redirect the user to other pages. 
+*@
+@page "/view-classes-assignments"
 @inject HttpClient Http
 @inject ILocalStorageService LocalStorage
 @inject NavigationManager NavManager
@@ -6,19 +11,33 @@
 
 <PageTitle>View Classes and Assignments</PageTitle>
 
+@*Button that will navigate the user to the add-class page. *@
 <button @onclick='() => NavManager.NavigateTo("/add-class")'>Add Class</button>
 
+@*Ensures classes has been successfully retrieved from the server and does nothing if it has not or renders the classes if it has. *@
 @if (classes is not null)
 {
+    @*// Loops through classes to render and renders each one with the index attached to not its position in the classes array. *@
     @foreach (var (i, _class) in classes.WithIndex())
     {
+        @*// Renders the class' name. *@
         @_class.Name
         <br>
+        @*// Loops through the students and renders each one. *@
         @foreach (var student in _class.Students)
         {
+            @*
+                StudentDisplayCheck is a component (found in Client/Shared) that renders a student with a checkbox next to it to handle situations such as this one
+                This links the student used in the component to the current foreach variable student in the class. 
+                This also links the IsChecked property of the component to use the IsStudentChecked to store its data. 
+                It also links the OnCheck event to the Check method. 
+            *@
             <StudentDisplayCheck Student="student" IsChecked="IsStudentChecked(_class, student)" OnCheck="(isChecked, student) => Check(_class, student, isChecked)"/>
         }
 
+        @*
+            Buttons that allow for functionality such as removing students that have been selected, navigating to the add-students-to-class page, removing an entire class, and navigating to the view-assignments page. 
+        *@
         <button @onclick="() => RemoveStudents(classes[i])">Remove Selected Students</button>
         <button @onclick="() => NavigateToAddStudentsToClass(classes[i])">Add Students to Class</button>
         <button @onclick="() => RemoveClass(classes[i])">Remove Class</button>
@@ -30,43 +49,57 @@
 
 @code
 {
+    // The list of classes retrieved to used for this page. 
     private List<Class> classes { get; set; } = null!;
-    //private bool[] checks = null!;
+    // The hash set of all checks, it contains the hashes of tuples of classes and students. 
+    // The presence of a class and student in checks indicates that the checkbox for that student/class combination has been checked. 
     HashSet<ValueTuple<Class, Student>> checks { get; set; } = null!;
 
     protected override async Task OnInitializedAsync()
     {
+        // Retrieves the teacher from local storage. 
         Teacher teacher = await LocalStorage.GetItemAsync<Teacher>("user");
 
+        // Retrieves the list of classes from the server. 
         classes = await Http.GetFromJsonAsync<List<Class>>($"https://localhost:7053/Teacher/{teacher.Id}/Classes") ?? new List<Class>();
 
+        // Calculates how many students there are in the class. 
         int totalStudents = classes.Sum(_class => _class.Students.Count);
 
+        // Assigns the checks HashSet with an initial capacity of the number of students to prevent dynamic resizing which can be slow and uses a great deal of memory. 
         checks = new HashSet<ValueTuple<Class, Student>>(totalStudents);
 
         await base.OnInitializedAsync();
     }
 
+    // Removes checked students from a given class. 
     private async Task RemoveStudents(Class _class)
     {
-        var studentsToRemove = _class.Students.Where(student => checks.Contains((_class, student))).ToArray();
+        // Gets the students to remove from the class by matching them with a predicate check that they are contained within the checks HashSet. 
+        var studentsToRemove = _class.Students.Where(student => checks.Contains((_class, student)));
 
+        // Loops through each student and removes them from both the list of students and the checks variable. 
         foreach (Student student in studentsToRemove)
         {
             _class.Students.Remove(student);
             checks.Remove((_class, student));
         }
 
+        // Indicates to rerender the component. 
         StateHasChanged();
 
-        await Http.PutAsJsonAsync($"https://localhost:7053/Class/{_class.Id}/Remove", studentsToRemove);
+        // Indicates to remove the selected students from the class. 
+        await Http.PostAsJsonAsync($"https://localhost:7053/Class/{_class.Id}/Remove", studentsToRemove);
     }
 
+    // Checks is used to represent the students which have their checkboxes checked. 
+    // This checks that a student is present in the HashSet
     private bool IsStudentChecked(Class _class, Student student)
     {
         return checks.Contains((_class, student));
     }
 
+    // This adds or removes the student/class combination from checks to indicate whether or not the student/class combination is currently checked. 
     private void Check(Class _class, Student student, bool isChecked)
     {
         if (isChecked)
@@ -79,16 +112,19 @@
         checks.Remove((_class, student));
     }
 
+    // This navigates the user to the add-students-to-class page with a class ID of that of the _class variable.
     private void NavigateToAddStudentsToClass(Class _class)
     {
         NavManager.NavigateTo($"/add-students-to-class/{_class.Id}");
     }
 
+    // This navigates the user to the view-assignments page with a class ID of that of the _class variable.
     private void NavigateToAssignments(Class _class)
     {
         NavManager.NavigateTo($"/view-assignments/{_class.Id}");
     }
 
+    // This removes a class from the list of classes then sends a delete request to the server to delete that class. 
     private async Task RemoveClass(Class @class)
     {
         classes.Remove(@class);
