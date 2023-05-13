@@ -207,6 +207,7 @@ namespace CourseworkPastPaperApplication2
             app.MapPost("/ValidateStudent", EndpointFunctions.ValidateUser<Student>);
         }
 
+# if DEBUG
         // Maps all endpoints used in the debug build of the app, used for debugging and filling the database with fake data, etc. 
         private static void MapDebugEndpoints(WebApplication app)
         {
@@ -288,5 +289,6 @@ namespace CourseworkPastPaperApplication2
                 db.SaveChanges();
             });
         }
+#endif
     }
 }
