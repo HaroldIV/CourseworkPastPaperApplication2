@@ -81,12 +81,12 @@
     {
         // Initialises variables used. 
         int rowCount = questions.Length + 1;
-        int columnCount = students.Length;
-        string[][] scoresTable = new string[rowCount][];
+        int columnCount = students.Length + 1;
+        string[][] scoresTable = new string[rowCount - 1][];
 
         for (int i = 0; i < scoresTable.Length; i++)
         {
-            scoresTable[i] = new string[columnCount];
+            scoresTable[i] = new string[columnCount - 1];
         }
 
         // Adds each paper result out of the score for the question in the form {score}/{marks}, for example: 9/15 marks for a question. 

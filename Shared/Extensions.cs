@@ -160,10 +160,10 @@ namespace CourseworkPastPaperApplication2.Shared
             using var enumerator = values.GetEnumerator();
 
             // Function to get all values up to the partitionIndex
-            var upTo = GetUpToIndex(enumerator, partitionIndex);
+            var upTo = GetUpToIndex(enumerator, partitionIndex).ToArray();
 
             // Gets all the rest of the values. 
-            restOfValues = enumerator.ToEnumerable();
+            restOfValues = enumerator.ToEnumerable().ToArray();
 
             return upTo;
         }

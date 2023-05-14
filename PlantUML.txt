@@ -77,27 +77,7 @@ class PaperResult extends DbTable {
 }
 PaperResult o-- Assignment
 PaperResult o-- Question
-PaperResult o-- Student
-
-class Class extends DbTable
-{
-- TeacherId : Guid
-+ GetTeacherId() : Guid
-+ SetTeacherId(teacherid : Guid) : void
-- Name : string
-+ GetName() : string
-+ SetName(name : string) : void
-- TeacherNavigation : Teacher
-+ GetTeacherNavigation() : Teacher
-+ SetTeacherNavigation(teachernavigation : Teacher) : void
-- /readonly/ Students : ICollection<Student>
-+ GetStudents() : ICollection<Student>
-- /readonly/ Assignments : ICollection<Assignment>
-+ GetAssignments() : ICollection<Assignment>
-}
-Class o-- Teacher
-Class o-- Student
-Class *-- Assignment
+PaperResult o--* Student
 
 class Assignment {
     - Set : DateOnly
@@ -117,29 +97,8 @@ class Assignment {
 + GetClass() : Class
 + SetClass(class : Class) : void
 }
-Assignment o-- Class
-Assignment o-- Question
-
-interface IFilterOption {
-+ GetId() : short
-+ SetId(id : short) : void
-+ GetName() : string
-+ SetName(name : string) : void
-}
-
-class RadioOptions
-{
-+ RadioOptions(levels : Level[], examBoards : ExamBoard[])
-- Levels : Level[]
-+ GetLevels() : Level[]
-+ SetLevels(levels : Level[]) : void
-- ExamBoards : ExamBoard[]
-+ GetExamBoards() : ExamBoard[]
-+ SetExamBoards(examboards : ExamBoard[]) : void
-}
-RadioOptions o-- Level
-RadioOptions o-- ExamBoard
-
+Assignment o--* Class
+Assignment o--o Question
 
 DbTable <|-- Question
 DbTable <|-- Assignment
@@ -171,6 +130,32 @@ class Question {
 Question o-- Level
 Question o-- ExamBoard
 
+
+interface IFilterOption {
++ GetId() : short
++ SetId(id : short) : void
++ GetName() : string
++ SetName(name : string) : void
+}
+
+struct QuestionSearchModel
+{
+- KeywordsList : HashSet<string>
++ GetKeywordsList() : HashSet<string>
++ SetKeywordsList(keywordslist : HashSet<string>) : void
+- All : bool
++ GetAll() : bool
++ SetAll(all : bool) : void
+- ExamBoards : IEnumerable<ExamBoard>
++ GetExamBoards() : IEnumerable<ExamBoard>
++ SetExamBoards(examboards : IEnumerable<ExamBoard>) : void
+- ValidLevels : IEnumerable<Level>
++ GetValidLevels() : IEnumerable<Level>
++ SetValidLevels(validlevels : IEnumerable<Level>) : void
+}
+QuestionSearchModel o-- ExamBoard
+QuestionSearchModel o-- Level
+
 class Level implements IFilterOption {
     - Id : short
 + GetId() : short
@@ -192,84 +177,11 @@ class ExamBoard implements IFilterOption
     + {abstract} ToString() : string
 }
 
-Question o-- Level
-Question o-- ExamBoard
+
 
 @enduml
 
 @startuml
-
-class FilterOptionConverter<T> extends "TypeConverter<T>"
-{
-  + {abstract} CanConvertFrom(context: Nullable<ITypeDescriptorContext>, sourceType: Type): bool
-  + {abstract} ConvertFrom(context: Nullable<ITypeDescriptorContext>, culture: Nullable<CultureInfo>, value: object): Nullable<object>
-  + {abstract} ConvertTo(context: Nullable<ITypeDescriptorContext>, culture: Nullable<CultureInfo>, value: Nullable<object>, destinationType: Type): Nullable<object>
-}
-
-class PaperResult extends DbTable {
-- Score : int
-+ GetScore() : int
-+ SetScore(score : int) : void
-- AssignmentId : Guid
-+ GetAssignmentId() : Guid
-+ SetAssignmentId(assignmentid : Guid) : void
-- StudentId : Guid
-+ GetStudentId() : Guid
-+ SetStudentId(studentid : Guid) : void
-- QuestionId : Guid
-+ GetQuestionId() : Guid
-+ SetQuestionId(questionid : Guid) : void
-- Assignment : Assignment
-+ GetAssignment() : Assignment
-+ SetAssignment(assignment : Assignment) : void
-- Question : Question
-+ GetQuestion() : Question
-+ SetQuestion(question : Question) : void
-- Student : Student
-+ GetStudent() : Student
-+ SetStudent(student : Student) : void
-}
-PaperResult o-- Assignment
-PaperResult o-- Question
-PaperResult o-- Student
-
-class Class extends DbTable
-{
-- TeacherId : Guid
-+ GetTeacherId() : Guid
-+ SetTeacherId(teacherid : Guid) : void
-- Name : string
-+ GetName() : string
-+ SetName(name : string) : void
-- TeacherNavigation : Teacher
-+ GetTeacherNavigation() : Teacher
-+ SetTeacherNavigation(teachernavigation : Teacher) : void
-- /readonly/ Students : ICollection<Student>
-+ GetStudents() : ICollection<Student>
-- /readonly/ Assignments : ICollection<Assignment>
-+ GetAssignments() : ICollection<Assignment>
-}
-Class o-- Teacher
-Class o-- Student
-Class *-- Assignment
-
-struct QuestionSearchModel
-{
-- KeywordsList : HashSet<string>
-+ GetKeywordsList() : HashSet<string>
-+ SetKeywordsList(keywordslist : HashSet<string>) : void
-- All : bool
-+ GetAll() : bool
-+ SetAll(all : bool) : void
-- ExamBoards : IEnumerable<ExamBoard>
-+ GetExamBoards() : IEnumerable<ExamBoard>
-+ SetExamBoards(examboards : IEnumerable<ExamBoard>) : void
-- ValidLevels : IEnumerable<Level>
-+ GetValidLevels() : IEnumerable<Level>
-+ SetValidLevels(validlevels : IEnumerable<Level>) : void
-}
-QuestionSearchModel o-- ExamBoard
-QuestionSearchModel o-- Level
 
 class Student extends User
 {
@@ -280,8 +192,7 @@ class Student extends User
 - /readonly/ CurrentClasses : ICollection<Class>
 + GetCurrentClasses() : ICollection<Class>
 }
-Student *-- PaperResult
-Student o-- Class
+Student *--o PaperResult
 
 class Teacher extends User
 {
@@ -317,16 +228,29 @@ struct UserWithUnencryptedPassword
 + SetPassword(password : string) : void
 }
 
-class Checked<T>
+class Class extends DbTable
 {
-- /readonly/ Value : T
-+ GetValue() : T
-- IsChecked : bool
-+ GetIsChecked() : bool
-+ SetIsChecked(ischecked : bool) : void
-+ {static} implicit operator(value : T) : Checked<T>
-+ {static} implicit operator(value : Checked<T>) : T
+- TeacherId : Guid
++ GetTeacherId() : Guid
++ SetTeacherId(teacherid : Guid) : void
+- Name : string
++ GetName() : string
++ SetName(name : string) : void
+- TeacherNavigation : Teacher
++ GetTeacherNavigation() : Teacher
++ SetTeacherNavigation(teachernavigation : Teacher) : void
+- /readonly/ Students : ICollection<Student>
++ GetStudents() : ICollection<Student>
+- /readonly/ Assignments : ICollection<Assignment>
++ GetAssignments() : ICollection<Assignment>
 }
+Class o-- Teacher
+Class o--o Student
+Class *--o Assignment
+
+@enduml
+
+@startuml
 
 class ResultsTable implements IResultsTable, ISerializable
 {
@@ -413,6 +337,10 @@ class ResultsTableJsonConverter extends "JsonConverter<ResultsTable>"
 + {abstract} Write(writer : Utf8JsonWriter, value : ResultsTable, options : JsonSerializerOptions) : void
 }
 
+@enduml
+
+@startuml
+
 class IgnorePropertyIfConverter<T> extends "JsonConverter<T>"
 {
 + IgnorePropertyIfConverter(propertyPredicate : Func<PropertyInfo, bool>)
@@ -454,6 +382,38 @@ ValidCharsHashSetSingleton o-- InstanceGetter
 class InstanceGetter extends "Func<ValidCharsHashSetSingleton>"
 {
 
+}
+
+class RadioOptions
+{
++ RadioOptions(levels : Level[], examBoards : ExamBoard[])
+- Levels : Level[]
++ GetLevels() : Level[]
++ SetLevels(levels : Level[]) : void
+- ExamBoards : ExamBoard[]
++ GetExamBoards() : ExamBoard[]
++ SetExamBoards(examboards : ExamBoard[]) : void
+}
+RadioOptions o-- Level
+RadioOptions o-- ExamBoard
+
+
+class Checked<T>
+{
+- /readonly/ Value : T
++ GetValue() : T
+- IsChecked : bool
++ GetIsChecked() : bool
++ SetIsChecked(ischecked : bool) : void
++ {static} implicit operator(value : T) : Checked<T>
++ {static} implicit operator(value : Checked<T>) : T
+}
+
+class FilterOptionConverter<T> extends "TypeConverter<T>"
+{
+  + {abstract} CanConvertFrom(context: Nullable<ITypeDescriptorContext>, sourceType: Type): bool
+  + {abstract} ConvertFrom(context: Nullable<ITypeDescriptorContext>, culture: Nullable<CultureInfo>, value: object): Nullable<object>
+  + {abstract} ConvertTo(context: Nullable<ITypeDescriptorContext>, culture: Nullable<CultureInfo>, value: Nullable<object>, destinationType: Type): Nullable<object>
 }
 
 @enduml

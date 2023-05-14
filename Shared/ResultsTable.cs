@@ -64,11 +64,11 @@ namespace CourseworkPastPaperApplication2.Shared
         public static implicit operator string[][](ResultsTable table)
         {
             // Initialises the array. 
-            string[][] arr = new string[table.Rows][];
+            string[][] arr = new string[table.Rows - 1][];
 
             for (int i = 0; i < arr.Length; i++)
             {
-                arr[i] = new string[table.Columns];
+                arr[i] = new string[table.Columns - 1];
             }
 
             // Assigns the values of the array with values from the table. 
