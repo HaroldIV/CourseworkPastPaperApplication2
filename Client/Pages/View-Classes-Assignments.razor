@@ -76,7 +76,7 @@
     private async Task RemoveStudents(Class _class)
     {
         // Gets the students to remove from the class by matching them with a predicate check that they are contained within the checks HashSet. 
-        var studentsToRemove = _class.Students.Where(student => checks.Contains((_class, student)));
+        var studentsToRemove = _class.Students.Where(student => checks.Contains((_class, student))).ToArray();
 
         // Loops through each student and removes them from both the list of students and the checks variable. 
         foreach (Student student in studentsToRemove)
